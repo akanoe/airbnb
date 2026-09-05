@@ -348,6 +348,14 @@ details.mdet[open]>summary::before{transform:rotate(90deg)}
 .mgrid input{width:100%;font:500 var(--t-s)/1.2 var(--f-ui);text-align:center;padding:7px 2px;
   border:1.5px solid var(--line-2);border-radius:var(--r-input);background:transparent;color:var(--ink)}
 .mgrid input:hover{border-color:var(--ink)}
+/* sufixo % nos campos de ocupação */
+.mgrid label,.flatbox label.f{position:relative}
+.mgrid label::after{content:"%";position:absolute;right:9px;bottom:8px;font-size:var(--t-xs);color:var(--mut);pointer-events:none}
+.mgrid input{padding-right:18px}
+.flatbox label.f::after{content:"%";position:absolute;right:16px;bottom:12px;font:400 var(--t-l)/1 var(--f-display);color:var(--mut);pointer-events:none}
+.flatbox label.f input{padding-right:40px}
+.mgrid input::-webkit-inner-spin-button,.mgrid input::-webkit-outer-spin-button,.flatbox input::-webkit-inner-spin-button,.flatbox input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.mgrid input,.flatbox input{-moz-appearance:textfield;appearance:textfield}
 
 /* ---------- gráfico ---------- */
 .chartwrap{border-radius:var(--r-card);background:var(--paper-2);padding:var(--s4);overflow:hidden}
@@ -1074,7 +1082,7 @@ function renderTables() {
         <div class="fh">% de noites ocupadas. Aplica o mesmo valor aos 12 meses; ajuste a sazonalidade abaixo só se algum mês for diferente.</div>
       </div>
       <details class="mdet"${fl === null ? " open" : ""}>
-        <summary>Sazonalidade mês a mês · % de noites ocupadas</summary>
+        <summary>Sazonalidade mês a mês</summary>
         <div class="mgrid">${MESES.map((m, j) => `<label>${m}${rowInput(`unidades.${i}.occupancy_mensal.${j}`, Math.round(num((u.occupancy_mensal || [])[j]) * 1000) / 10, "s pct", "number", "1", ' min="0" max="100"')}</label>`).join("")}</div>
       </details>
     </div>`;
