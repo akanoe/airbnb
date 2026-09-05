@@ -367,6 +367,17 @@ svg.chart{display:block;width:100%;height:auto}
 .chart-key i.z{height:0;border-top:1.5px dotted var(--line-3)}
 .chart-key i.n{height:12px;width:12px;border-radius:50%;background:var(--bad-2);border:1.5px solid var(--bad-3)}
 
+/* ---------- plano para lucratividade ---------- */
+.plano-top{display:flex;flex-wrap:wrap;gap:var(--s3) var(--s4);align-items:flex-end;margin-top:var(--s4);padding-top:var(--s4);border-top:var(--dot)}
+.plano-top label.f{flex:0 0 150px}
+#plano table td.num{text-align:right}
+#plano tr.chg td{background:var(--warn-2);color:var(--color-obsidian)}
+#plano tr.chg td:first-child{box-shadow:inset 4px 0 0 var(--acc)}
+#plano .lead{font-size:var(--t-m);max-width:70ch;text-wrap:pretty;margin:0 0 var(--s4)}
+#plano .lead b{background:var(--warn-2);color:var(--color-obsidian);padding:0 5px;border-radius:4px;font-weight:500}
+.chg,td input.chg,label.f input.chg,.mgrid input.chg{border-color:var(--acc)!important;box-shadow:0 0 0 3px var(--warn-2)}
+@media print{#plano,.plano-top{display:none!important}}
+
 textarea{width:100%;min-height:260px;font:400 var(--t-s)/1.6 var(--f-mono);
   border:1.5px solid var(--line-2);border-radius:var(--r-medium);padding:var(--s4);
   background:transparent;color:var(--ink)}
@@ -486,7 +497,14 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
     </div>
     <p class="verdict-line" id="veredito"><span></span></p>
     <div class="kpis" id="kpis"></div>
+    <div class="plano-top">
+      <label class="f">ROI alvo (% ao ano)<input type="number" step="0.5" min="0" data-k="plano.roi_alvo" data-t="pct"></label>
+      <button class="primary" id="btnPlano">Gerar plano para lucratividade</button>
+      <button id="btnDesfazerPlano" class="hide">Desfazer plano aplicado</button>
+      <span class="note" style="margin:0;flex:1 1 260px">Procura a menor mudança em comissão, ocupação, diária e preço que atinge o ROI alvo no primeiro ano de operação (cenário base). Mostra antes de aplicar.</span>
+    </div>
   </div>
+  <div class="card hide" id="plano"></div>
 
   <div class="p-only p-prem" id="pPrem"></div>
 
@@ -769,7 +787,8 @@ function defaults() {
       { id: "reposicao", nome: "Reposição por noite (papel, café…)", custo_unitario: 8, por: "noite_ocupada" }
     ],
     rollout: [1, 2, 3, 4, 5].map(ano => ({ ano, occupancy_mult: 1.0, capex_extra_brl: 0 })),
-    risco: { occupancy_cenarios: { conservador: 0.7, base: 1.0, otimista: 1.15 }, reserva_meses_opex: 3, nota: "" }
+    risco: { occupancy_cenarios: { conservador: 0.7, base: 1.0, otimista: 1.15 }, reserva_meses_opex: 3, nota: "" },
+    plano: { roi_alvo: 0.08 }
   };
 }
 
@@ -985,6 +1004,45 @@ function gerarObra(s) {
   if (s.projeto) s.projeto.tipo = "terreno_casas";
   return s;
 }
+
+// ---- Plano para lucratividade: menor mudança nas alavancas (em ordem) que atinge ROI ≥ alvo no primeiro ano de operação, cenário base.
+function roiDe(s) { const r = calc(s, "base"); const ct = r.kpis.capex_total; return { roi: ct > 0 ? r.anos[anoOperacao(s) - 1].resultado / ct : null, r }; }
+function planoLucratividade(s, alvo) {
+  const passos = [], un = s.unidades || [];
+  const meanOcc = st => { const u = st.unidades || []; if (!u.length) return 0; return u.reduce((a, x) => a + (x.occupancy_mensal || []).reduce((b, o) => b + num(o), 0) / 12, 0) / u.length; };
+  const meanAdr = st => { const u = st.unidades || []; return u.length ? u.reduce((a, x) => a + num(x.adr_brl), 0) / u.length : 0; };
+  const baseLine = st => (st.capex || []).find(l => l.id === "compra" || l.id === "terreno") || (st.capex || []).find(l => l.categoria === "aquisicao");
+  const ok = st => { const x = roiDe(st).roi; return x !== null && x >= alvo - 1e-9; };
+  const r0 = roiDe(s);
+  const out = { alvo, roi_inicial: r0.roi, passos, atingido: false, estado: clone(s) };
+  if (r0.roi === null || s.projeto.tipo === "terreno" || !un.length) { out.motivo = s.projeto.tipo === "terreno" ? "tipo terreno não opera — mude para terreno_casas" : !un.length ? "nenhuma unidade cadastrada" : "sem CAPEX para calcular ROI"; return out; }
+  if (ok(s)) { out.atingido = true; out.ja_atinge = true; out.roi_final = r0.roi; out.payback = r0.r.kpis.payback_meses; return out; }
+  const levers = [
+    { nome: "Comissão da administradora", chave: "operacao.admin_pct", tipo: "pct", hi: 2, teto: "piso 15%", cond: st => st.operacao.modelo !== "autogestao" && num(st.operacao.admin_pct) > 0.15, atual: st => num(st.operacao.admin_pct),
+      apply: (st, f) => { const t = clone(st), a = num(st.operacao.admin_pct); t.operacao.admin_pct = Math.floor((a - (a - 0.15) * (f - 1)) * 200) / 200; return t; } },
+    { nome: "Ocupação média", chave: "occupancy", tipo: "pct", hi: 3, teto: "teto 85%", cond: st => meanOcc(st) < 0.85 && meanOcc(st) > 0, atual: meanOcc,
+      apply: (st, f) => { const t = clone(st); t.unidades = t.unidades.map(u => ({ ...u, occupancy_mensal: (u.occupancy_mensal || flat(0)).map(o => Math.ceil(clamp(num(o) * f, 0, 0.85) * 100) / 100) })); return t; } },
+    { nome: "Diária média (ADR)", chave: "adr", tipo: "brl", hi: 1.3, teto: "teto +30%", cond: st => meanAdr(st) > 0, atual: meanAdr,
+      apply: (st, f) => { const t = clone(st); t.unidades = t.unidades.map(u => ({ ...u, adr_brl: Math.ceil(num(u.adr_brl) * f / 5) * 5 })); return t; } },
+    { nome: "Preço de compra / terreno", chave: "preco", tipo: "brl", hi: 2, teto: "teto −50%", cond: st => { const b = baseLine(st); return !!b && num(b.valor_brl) > 0; }, atual: st => { const b = baseLine(st); return b ? num(b.valor_brl) : 0; },
+      apply: (st, f) => { const t = clone(st); const b = baseLine(t); b.valor_brl = Math.floor(num(b.valor_brl) * (1 - 0.5 * (f - 1)) / 1000) * 1000; aplicarPct(t); return t; } }
+  ];
+  let cur = clone(s);
+  for (const L of levers) {
+    const antes = L.atual(cur);
+    if (!L.cond(cur)) { passos.push({ alavanca: L.nome, chave: L.chave, tipo: L.tipo, atual: antes, sugerido: antes, alterado: false, roi_apos: roiDe(cur).roi, nota: "sem margem nesta alavanca" }); continue; }
+    let st = L.apply(cur, L.hi), atingiu = ok(st);
+    if (atingiu) { let lo = 1, hi = L.hi; for (let i = 0; i < 22; i++) { const mid = (lo + hi) / 2; if (ok(L.apply(cur, mid))) hi = mid; else lo = mid; } st = L.apply(cur, hi); }
+    const depois = L.atual(st);
+    const alterado = Math.abs(depois - antes) > 1e-9;
+    cur = st;
+    passos.push({ alavanca: L.nome, chave: L.chave, tipo: L.tipo, atual: antes, sugerido: depois, alterado, roi_apos: roiDe(cur).roi, nota: atingiu ? "fecha a meta aqui" : `no ${L.teto}, ainda não fecha` });
+    if (atingiu) { out.atingido = true; break; }
+  }
+  const rf = roiDe(cur);
+  out.estado = cur; out.roi_final = rf.roi; out.payback = rf.r.kpis.payback_meses;
+  return out;
+}
 /*ENGINE-END*/
 
 // ---------------- UI ----------------
@@ -998,7 +1056,7 @@ const brl = v => "R$ " + fmt(v);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 const CAT = { aquisicao: ["Aquisição", "var(--cat-aquisicao)"], cartorio: ["ITBI + cartório", "var(--cat-cartorio)"], obra: ["Obra / fit-out", "var(--cat-obra)"], mobiliario: ["Mobiliário", "var(--cat-mobiliario)"], equipamentos: ["Equipamentos", "var(--cat-equip)"], projeto: ["Projeto / taxas", "var(--acc-wash)"], contingencia: ["Contingência", "var(--warn)"], outros: ["Outros", "var(--mut)"] };
-let state, cenario = "base";
+let state, cenario = "base", changedPaths = new Set(), planoBackup = null;
 
 function get(o, path) { return path.split(".").reduce((a, k) => (a == null ? undefined : a[k]), o); }
 function set(o, path, v) { const ks = path.split("."); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== "object") c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; }
@@ -1280,12 +1338,47 @@ function renderOut() {
   ];
   $("#pPrem").innerHTML = prem.map(([l, v]) => `<div>${esc(l)} <span>${esc(v)}</span></div>`).join("");
   $("#jsonArea").value = JSON.stringify(s, null, 2);
+  markChanged();
 }
 
+function markChanged() {
+  const hit = p => { for (const c of changedPaths) if (p === c || p.startsWith(c + ".")) return true; return false; };
+  document.querySelectorAll("[data-k],[data-p]").forEach(el => el.classList.toggle("chg", hit(el.dataset.k || el.dataset.p)));
+  document.querySelectorAll("[data-flat]").forEach(el => el.classList.toggle("chg", hit(`unidades.${el.dataset.flat}.occupancy_mensal`)));
+  $("#btnDesfazerPlano").classList.toggle("hide", !planoBackup);
+}
+function renderPlano() {
+  const alvo = Math.max(0, num(state.plano.roi_alvo));
+  const p = planoLucratividade(state, alvo);
+  const box = $("#plano"); box.classList.remove("hide");
+  const fv = (tipo, v) => tipo === "pct" ? pct(v) : brl(v);
+  const capex = calc(state, "base").kpis.capex_total;
+  const fechar = () => { $("#btnFecharPlano").onclick = () => box.classList.add("hide"); };
+  let h = `<h2>Plano para ${pct(alvo)} ao ano</h2>`;
+  if (p.motivo) { box.innerHTML = h + `<p class="lead">Não dá para montar o plano: ${esc(p.motivo)}.</p><div class="toolbar"><button id="btnFecharPlano">Fechar</button></div>`; fechar(); return; }
+  if (p.ja_atinge) { box.innerHTML = h + `<p class="lead">As premissas atuais <b>já rendem ${pct(p.roi_inicial)} ao ano</b> sobre um CAPEX de ${brl(capex)} — acima da meta de ${pct(alvo)}. Nada a mudar.</p><div class="toolbar"><button id="btnFecharPlano">Fechar</button></div>`; fechar(); return; }
+  h += `<p class="lead">Hoje o projeto rende <b>${pct(p.roi_inicial)} ao ano</b> sobre ${brl(capex)}. Para chegar a ${pct(alvo)} (${brl(alvo * capex)} de resultado por ano) o plano mexe nas alavancas abaixo, em ordem, com a menor mudança possível em cada uma. ${p.atingido ? `<b>Com o plano: ${pct(p.roi_final)} ao ano</b>${p.payback !== null ? `, payback em ${p.payback} meses` : ""}.` : `<b>Não fecha nem com todas as alavancas no limite</b>: chega a ${pct(p.roi_final)} ao ano. Reveja o CAPEX ou a meta.`}</p>`;
+  h += `<div class="tw"><table><tr><th>Alavanca</th><th>Atual</th><th>Sugerido</th><th>ROI após</th><th>Nota</th></tr>` +
+    p.passos.map(x => `<tr class="${x.alterado ? "chg" : ""}"><td>${esc(x.alavanca)}</td><td class="num">${fv(x.tipo, x.atual)}</td><td class="num">${x.alterado ? `<b>${fv(x.tipo, x.sugerido)}</b>` : "—"}</td><td class="num">${pct(x.roi_apos)}</td><td style="text-align:left;white-space:normal">${esc(x.nota || "")}</td></tr>`).join("") + `</table></div>`;
+  h += `<p class="note">Limites do plano: comissão até 15%, ocupação até 85%, diária até +30%, preço até −50% (ITBI e cartório recalculados). Ocupação sazonal é escalada mês a mês. As mudanças aplicadas ficam marcadas em amarelo nas abas.</p>`;
+  h += `<div class="toolbar" style="margin-top:var(--s4)"><button class="primary" id="btnAplicarPlano">${p.atingido ? "Aplicar plano" : "Aplicar mesmo assim"}</button><button id="btnFecharPlano">Fechar</button></div>`;
+  box.innerHTML = h; fechar();
+  $("#btnAplicarPlano").onclick = () => {
+    planoBackup = clone(state); changedPaths = new Set();
+    for (const x of p.passos.filter(x => x.alterado)) {
+      if (x.chave === "operacao.admin_pct") changedPaths.add("operacao.admin_pct");
+      if (x.chave === "occupancy") state.unidades.forEach((u, i) => changedPaths.add(`unidades.${i}.occupancy_mensal`));
+      if (x.chave === "adr") state.unidades.forEach((u, i) => changedPaths.add(`unidades.${i}.adr_brl`));
+      if (x.chave === "preco") state.capex.forEach((l, i) => { if (["compra", "terreno", "itbi", "cartorio"].includes(l.id)) changedPaths.add(`capex.${i}.valor_brl`); });
+    }
+    state = p.estado; syncInputs(); renderTables(); renderOut();
+    box.innerHTML = `<h2>Plano aplicado</h2><p class="lead">Os campos alterados estão marcados em amarelo nas abas CAPEX, Operação e Demanda. Use “Desfazer plano aplicado” no bloco de veredito para voltar.</p><div class="toolbar"><button id="btnFecharPlano">Fechar</button></div>`; fechar();
+  };
+}
 function importJson(text) {
   let j; try { j = JSON.parse(text); } catch (e) { return "JSON inválido (arquivo cortado ou mal formado): " + e.message; }
   const e = validate(j); if (e.length) return "Recusado: " + e.join(" ");
-  state = merge(defaults(), j); ensureRollout(); syncInputs(); renderTables(); renderOut(); return "Importado.";
+  changedPaths = new Set(); planoBackup = null; $("#plano").classList.add("hide"); state = merge(defaults(), j); ensureRollout(); syncInputs(); renderTables(); renderOut(); return "Importado.";
 }
 
 // ---- wiring
@@ -1300,13 +1393,15 @@ $("#btnImport").addEventListener("click", () => $("#fileImport").click());
 $("#fileImport").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { const msg = importJson(rd.result); $("#jsonMsg").textContent = msg; if (msg !== "Importado.") alert(msg); }; rd.readAsText(f); e.target.value = ""; });
 $("#btnLoadText").addEventListener("click", () => { $("#jsonMsg").textContent = importJson($("#jsonArea").value); });
 $("#btnRefreshText").addEventListener("click", () => { $("#jsonArea").value = JSON.stringify(state, null, 2); $("#jsonMsg").textContent = "Atualizado."; });
-$("#btnReset").addEventListener("click", () => { if (!confirm("Voltar aos defaults? Isso apaga o estado atual.")) return; state = defaults(); syncInputs(); renderTables(); renderOut(); });
+$("#btnReset").addEventListener("click", () => { if (!confirm("Voltar aos defaults? Isso apaga o estado atual.")) return; changedPaths = new Set(); planoBackup = null; $("#plano").classList.add("hide"); state = defaults(); syncInputs(); renderTables(); renderOut(); });
 $("#btnPrint").addEventListener("click", () => window.print());
+$("#btnPlano").addEventListener("click", () => { renderPlano(); $("#plano").scrollIntoView({ behavior: "smooth", block: "start" }); });
+$("#btnDesfazerPlano").addEventListener("click", () => { if (!planoBackup) return; state = planoBackup; planoBackup = null; changedPaths = new Set(); $("#plano").classList.add("hide"); syncInputs(); renderTables(); renderOut(); });
 $("#btnAddCapex").addEventListener("click", () => { state.capex.push({ id: "novo" + (state.capex.length + 1), categoria: "outros", descricao: "", valor_brl: 0, mes_inicio: 0, meses: 1 }); renderTables(); renderOut(); });
 $("#btnAddUnidade").addEventListener("click", () => { const n = state.unidades.length + 1; const p = state.unidades[0]; state.unidades.push({ id: "u" + n, nome: "Unidade " + n, tipologia: p ? p.tipologia : "apto", m2: p ? p.m2 : 45, abre_no_mes: 1, adr_brl: p ? p.adr_brl : 350, occupancy_mensal: p ? clone(p.occupancy_mensal) : flat(0.6) }); renderTables(); renderOut(); });
 $("#btnAddSupr").addEventListener("click", () => { state.suprimentos.push({ id: "item" + (state.suprimentos.length + 1), nome: "", custo_unitario: 0, por: "checkout" }); renderTables(); renderOut(); });
 $("#btnAplicarPct").addEventListener("click", () => { aplicarPct(state); renderTables(); renderOut(); });
-$("#btnGerarObra").addEventListener("click", () => { gerarObra(state); syncInputs(); renderTables(); renderOut(); });
+$("#btnGerarObra").addEventListener("click", () => { changedPaths = new Set(); gerarObra(state); syncInputs(); renderTables(); renderOut(); });
 </script>
 </body>
 </html>

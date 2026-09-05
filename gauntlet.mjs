@@ -5,8 +5,8 @@ import vm from "node:vm";
 const html = readFileSync(new URL("./airbnb-calc.html", import.meta.url), "utf8");
 const engine = html.split("/*ENGINE-START*/")[1].split("/*ENGINE-END*/")[0];
 const ctx = {}; vm.createContext(ctx);
-vm.runInContext(engine + "\nthis.calc=calc;this.validate=validate;this.defaults=defaults;this.merge=merge;this.equilibrio=equilibrio;this.gerarObra=gerarObra;this.aplicarPct=aplicarPct;this.capexTotal=capexTotal;", ctx);
-const { calc, validate, defaults, merge, equilibrio, gerarObra, aplicarPct, capexTotal } = ctx;
+vm.runInContext(engine + "\nthis.calc=calc;this.validate=validate;this.defaults=defaults;this.merge=merge;this.equilibrio=equilibrio;this.gerarObra=gerarObra;this.aplicarPct=aplicarPct;this.capexTotal=capexTotal;this.planoLucratividade=planoLucratividade;this.roiDe=roiDe;", ctx);
+const { calc, validate, defaults, merge, equilibrio, gerarObra, aplicarPct, capexTotal, planoLucratividade, roiDe } = ctx;
 const fixture = JSON.parse(readFileSync(new URL("./fixture-g2.json", import.meta.url), "utf8"));
 const clone = o => JSON.parse(JSON.stringify(o));
 const results = [];
@@ -173,6 +173,22 @@ const F = () => merge(defaults(), fixture);
   check("G6", "N casas 0 + caseiro → 0 caseiros + aviso", calc(n0).anos[0].caseiros === 0 && calc(n0).avisos.some(a => /sem unidades/.test(a)), `caseiros=${calc(n0).anos[0].caseiros}`);
   let cut; try { JSON.parse(JSON.stringify(fixture).slice(0, 200)); cut = "parse ok?!"; } catch (e) { cut = e.message; }
   check("G6", "JSON cortado → parse falha (UI mostra 'JSON inválido (arquivo cortado…)')", cut !== "parse ok?!" && /arquivo cortado/.test(html), `parse: ${cut}`);
+}
+
+// ---- G7 Plano para lucratividade
+{
+  const p8 = planoLucratividade(F(), 0.08);
+  check("G7", "fixture (ROI 4,4%) → plano atinge 8% e ROI final ≥ 8%", p8.atingido && p8.roi_final >= 0.08 && p8.passos.some(x => x.alterado), `roi_inicial=${p8.roi_inicial?.toFixed(4)} roi_final=${p8.roi_final?.toFixed(4)} passos=${JSON.stringify(p8.passos.map(x => [x.alavanca, x.atual, x.sugerido, x.alterado]))}`);
+  check("G7", "plano respeita ordem: admin cai antes de mexer em ocupação", p8.passos[0].chave === "operacao.admin_pct" && p8.passos[0].sugerido <= p8.passos[0].atual, `passo1=${p8.passos[0].alavanca} ${p8.passos[0].atual}→${p8.passos[0].sugerido}`);
+  check("G7", "estado sugerido válido e calcula sem NaN", validate(p8.estado).length === 0 && finiteDeep(calc(p8.estado).kpis) === null, "validate + finiteDeep");
+  const p1 = planoLucratividade(F(), 0.01);
+  check("G7", "meta já atingida → nada muda", p1.ja_atinge && p1.atingido, `ja_atinge=${p1.ja_atinge}`);
+  const p99 = planoLucratividade(F(), 0.99);
+  check("G7", "meta impossível (99%) → não atinge, devolve estado no limite sem exception", !p99.atingido && p99.roi_final > p99.roi_inicial && validate(p99.estado).length === 0, `roi_final=${p99.roi_final?.toFixed(3)}`);
+  const t0 = F(); t0.projeto.tipo = "terreno";
+  check("G7", "tipo terreno → motivo humano", !!planoLucratividade(t0, 0.08).motivo, planoLucratividade(t0, 0.08).motivo);
+  const menor = planoLucratividade(F(), 0.06);
+  check("G7", "meta menor (6%) exige mudança menor ou igual à de 8%", menor.passos.filter(x => x.alterado).length <= p8.passos.filter(x => x.alterado).length, `6%: ${menor.passos.filter(x => x.alterado).length} alavancas; 8%: ${p8.passos.filter(x => x.alterado).length}`);
 }
 
 // ---- relatório
