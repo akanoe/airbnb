@@ -232,7 +232,7 @@ section.tab.on{display:block}
 .card h3{font-size:var(--t-xs);margin:var(--s6) 0 var(--s3);color:var(--mut);
   text-transform:uppercase;letter-spacing:var(--track);font-family:var(--f-ui);font-weight:500}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:var(--s4)}
-label.f{display:flex;flex-direction:column;gap:6px;font-size:var(--t-xs);color:var(--mut);
+label.f{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;font-size:var(--t-xs);color:var(--mut);
   text-transform:uppercase;letter-spacing:var(--track);font-weight:500}
 label.f input,label.f select{font:500 var(--t-m)/1.2 var(--f-ui);color:var(--ink);padding:10px 16px;
   border:1.5px solid var(--line-2);border-radius:var(--r-input);background:transparent;width:100%;min-width:0}
@@ -597,13 +597,13 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
       <h2>Demanda e preço</h2>
       <div class="grid">
         <label class="f">Noites por mês<input type="number" step="1" data-k="operacao.noites_mes" data-t="num"></label>
-        <label class="f">Estadia média (noites) → checkouts<input type="number" step="0.5" data-k="operacao.estada_media" data-t="num"></label>
+        <label class="f">Estadia média por reserva (noites)<input type="number" step="0.5" data-k="operacao.estada_media" data-t="num"></label>
         <label class="f">Taxa de limpeza cobrada do hóspede (BRL / checkout)<input type="number" step="10" data-k="operacao.taxa_limpeza_hospede_brl" data-t="num"></label>
         <label class="f">Quem fica com a taxa de limpeza<select data-k="operacao.limpeza_fica_com_host" data-t="bool">
           <option value="true">host (vira receita)</option><option value="false">pass-through (não entra no caixa)</option>
         </select></label>
       </div>
-      <p class="def">30 noites/mês, estadia média <b>3</b> noites, taxa de limpeza <b>0</b>. Se fica com o host, entra na receita bruta e paga plataforma e impostos, mas não comissão da administradora.</p>
+      <p class="def">30 noites/mês, estadia média <b>3</b> noites, taxa de limpeza <b>0</b>. Checkouts do mês = noites ocupadas ÷ estadia média; é o checkout que dispara limpeza, amenities e a taxa cobrada do hóspede. Se fica com o host, entra na receita bruta e paga plataforma e impostos, mas não comissão da administradora.</p>
       <h3>Unidades</h3>
       <div class="units" id="tblUnidades"></div>
       <div class="toolbar" style="margin-top:var(--s4)"><button id="btnAddUnidade">+ unidade</button></div>
