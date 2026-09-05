@@ -1223,7 +1223,8 @@ function renderOut() {
   const naAdmin = !!s.operacao.suprimentos_na_admin;
   const suprNoite = a1.noites > 0 ? a1.suprimentos_bruto / a1.noites : 0;
   const kpm = (l, v, sub) => `<div class="kpi mini"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
-  $("#suprResumo").innerHTML = `<div class="kpis">` +
+  const semNoites = a1.noites <= 0 ? (s.projeto.tipo === "terreno" ? "zero noites: tipo terreno não opera" : !s.unidades.length ? "zero noites: nenhuma unidade cadastrada" : s.unidades.every(u => (Math.round(num(u.abre_no_mes)) || 1) > 12) ? "zero noites no ano 1: unidades abrem depois do mês 12" : num((s.risco.occupancy_cenarios || {})[cenario]) <= 0 ? `zero noites: multiplicador do cenário ${cenario} é 0` : "zero noites: ocupação 0% em todos os meses (aba Demanda)") : null;
+  $("#suprResumo").innerHTML = (semNoites ? `<div class="alert aviso" style="margin-bottom:var(--s3)">⚠ ${semNoites}</div>` : "") + `<div class="kpis">` +
     kpm("Suprimentos ano 1", brl(a1.suprimentos_bruto), naAdmin ? "cobertos pela administradora — não abatidos" : `${fmt1(coMes)} checkouts/mês · ${fmt1(noitesMes)} noites/mês`) +
     kpm("Por noite ocupada", brl(suprNoite), a1.adr_medio > 0 ? `${pct(suprNoite / a1.adr_medio)} da diária` : "sem noites ocupadas") +
     kpm("Diárias líquidas após suprimentos (ano 1)", brl(a1.receita_diarias - a1.suprimentos), `${brl(a1.receita_diarias)} − ${brl(a1.suprimentos)}`) + `</div>`;
@@ -1243,7 +1244,7 @@ function renderOut() {
     h += row("step final", "Sobra por noite ocupada", sobra);
     $("#casc").innerHTML = h;
     $("#cascNote").innerHTML = `Cada R$ 100 de diária deixa <b>R$ ${fmt(100 * sobra / adr)}</b> no bolso com as premissas atuais. Com ${fmt1(n / 12)} noites/mês: ${brl(a1.resultado / 12)}/mês, ${brl(a1.resultado)}/ano.`;
-  } else { $("#casc").innerHTML = ""; $("#cascNote").textContent = "Sem noites ocupadas no ano 1 — a cascata aparece quando houver receita de diárias."; }
+  } else { $("#casc").innerHTML = ""; $("#cascNote").textContent = (semNoites ? semNoites.charAt(0).toUpperCase() + semNoites.slice(1) : "Sem noites ocupadas no ano 1") + " — a cascata aparece quando houver receita de diárias."; }
   const nCasMax = Math.max(0, ...m12.map(x => x.n_caseiros));
   $("#caseiroResumo").textContent = s.caseiros.ativo ? `Ano 1: até ${nCasMax} caseiro(s) · custo fixo ${brl(m12.reduce((a, x) => a + x.caseiros_fixo, 0))} + bônus ${brl(m12.reduce((a, x) => a + x.caseiros_bonus, 0))} = ${brl(a1.caseiros)} · base do bônus: ${s.caseiros.bonus_base}` : "Caseiro desativado.";
 
