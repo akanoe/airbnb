@@ -1071,10 +1071,10 @@ function renderTables() {
       </div>
       <div class="flatbox">
         <label class="f">Ocupação<input class="s" type="number" step="1" min="0" max="100" data-flat="${i}" placeholder="${fl === null ? "misto" : "%"}" value="${fl === null ? "" : fl}"></label>
-        <div class="fh">Aplica o mesmo % aos 12 meses. Ajuste a sazonalidade abaixo só se precisar.</div>
+        <div class="fh">% de noites ocupadas. Aplica o mesmo valor aos 12 meses; ajuste a sazonalidade abaixo só se algum mês for diferente.</div>
       </div>
       <details class="mdet"${fl === null ? " open" : ""}>
-        <summary>Sazonalidade mês a mês</summary>
+        <summary>Sazonalidade mês a mês · % de noites ocupadas</summary>
         <div class="mgrid">${MESES.map((m, j) => `<label>${m}${rowInput(`unidades.${i}.occupancy_mensal.${j}`, Math.round(num((u.occupancy_mensal || [])[j]) * 1000) / 10, "s pct", "number", "1", ' min="0" max="100"')}</label>`).join("")}</div>
       </details>
     </div>`;
