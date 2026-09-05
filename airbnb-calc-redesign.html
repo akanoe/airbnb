@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Airbnb Calc — redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS — Caldera (forge fire on warm limestone)
+   Copie este bloco para o app real.
+   ============================================================ */
+:root{
+  /* paleta Caldera */
+  --color-ember:#fc5000;
+  --color-plasma:#524ae9;
+  --color-sulfur:#f5f28e;
+  --color-limestone:#f7f6f2;
+  --color-pumice:#e2e2df;
+  --color-obsidian:#070607;
+  --color-chalk:#ffffff;
+
+  /* superfícies e tinta (semânticas) */
+  --bg:var(--color-pumice);
+  --paper:var(--color-limestone);
+  --paper-2:#efeeea;
+  --paper-3:#e7e6e1;
+  --ink:var(--color-obsidian);
+  --ink-2:#3d3b39;
+  --mut:#6f6c68;
+  --on-dark:var(--color-chalk);
+  --bar:var(--color-obsidian);
+
+  /* traços — o pontilhado é assinatura do sistema */
+  --line:rgba(7,6,7,.14);
+  --line-2:rgba(7,6,7,.24);
+  --line-3:rgba(7,6,7,.42);
+  --dot:1.5px dotted rgba(7,6,7,.34);
+
+  /* semântica de estado, dentro da paleta */
+  --acc:var(--color-ember);        /* ação primária + urgência */
+  --acc-ink:var(--color-obsidian); /* texto sobre Ember */
+  --acc-wash:rgba(252,80,0,.12);
+  --bad:var(--color-ember);
+  --bad-2:rgba(252,80,0,.13);
+  --bad-3:rgba(252,80,0,.45);
+  --warn:var(--color-obsidian);
+  --warn-2:var(--color-sulfur);
+  --warn-3:rgba(7,6,7,.28);
+  --pos:var(--color-obsidian);
+
+  /* cores de dado (categorias / gráficos) */
+  --cat-aquisicao:var(--color-obsidian);
+  --cat-cartorio:var(--color-ember);
+  --cat-obra:var(--color-plasma);
+  --cat-mobiliario:var(--color-sulfur);
+  --cat-equip:#a8a5a0;
+
+  /* espaçamento (escala Caldera) */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:40px; --s7:64px;
+  --pad-card:clamp(18px,3.2vw,40px);
+  --gutter:clamp(12px,3vw,40px);
+  --page:1280px;
+
+  /* raio */
+  --r-small:16px; --r-medium:20px; --r-card:20px;
+  --r-input:100px; --r-pill:800px; --r1:100px; --r2:100px; --r3:var(--r-card);
+
+  /* tipografia */
+  --f-display:"Anton","PP Neue Corp Compact","Bebas Neue","Arial Narrow",Impact,sans-serif;
+  --f-ui:"DM Sans",Inter,Manrope,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-num:var(--f-display);
+  --f-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --t-3xl:clamp(38px,6.4vw,72px);
+  --t-2xl:clamp(30px,4vw,44px);
+  --t-xl:clamp(24px,2.6vw,32px);
+  --t-l:clamp(20px,2.1vw,26px);
+  --t-m:15px; --t-s:13px; --t-xs:11.5px;
+  --lh-tight:.94; --lh:1.5; --track:.06em; --track-d:.02em;
+  /* aliases legados */
+  --card:var(--paper); --acc2:var(--acc-wash); --bad2:var(--bad-2); --warn2:var(--warn-2); --mono:var(--f-mono);
+  --acc-3:#c93f00; --t-2xl-legacy:0;
+}
+:root[data-theme="dark"]{
+  --bg:#0d0c0c; --paper:#161514; --paper-2:#1d1b1a; --paper-3:#242120;
+  --ink:#f4f2ee; --ink-2:#cfcbc4; --mut:#95908a; --bar:#000;
+  --line:rgba(244,242,238,.14); --line-2:rgba(244,242,238,.22); --line-3:rgba(244,242,238,.4);
+  --dot:1.5px dotted rgba(244,242,238,.32);
+  --warn:var(--color-obsidian); --warn-2:var(--color-sulfur);
+  --cat-aquisicao:#f4f2ee; --cat-equip:#6b6864;
+  --pos:#f4f2ee;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d0c0c; --paper:#161514; --paper-2:#1d1b1a; --paper-3:#242120;
+    --ink:#f4f2ee; --ink-2:#cfcbc4; --mut:#95908a; --bar:#000;
+    --line:rgba(244,242,238,.14); --line-2:rgba(244,242,238,.22); --line-3:rgba(244,242,238,.4);
+    --dot:1.5px dotted rgba(244,242,238,.32);
+    --cat-aquisicao:#f4f2ee; --cat-equip:#6b6864; --pos:#f4f2ee;
+  }
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:500 var(--t-m)/var(--lh) var(--f-ui);font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;letter-spacing:var(--track-d);
+  line-height:1;text-transform:none}
+a{color:var(--ink);text-decoration-thickness:1.5px;text-underline-offset:3px}
+a:hover{color:var(--acc)}
+
+/* ---------- barra de navegação (dark, divisores pontilhados) ---------- */
+.topbar{background:var(--bar);color:var(--on-dark);display:flex;align-items:stretch;
+  gap:0;min-height:58px;position:relative}
+.brand{display:flex;align-items:center;gap:10px;padding:0 clamp(12px,2.4vw,28px);
+  color:var(--on-dark);text-decoration:none;flex:0 0 auto}
+.brand .mark{width:26px;height:26px;flex:0 0 auto;display:grid;place-items:center;color:var(--acc)}
+.brand .mark svg{display:block;width:26px;height:26px}
+.brand .wm{font-family:var(--f-display);font-size:22px;letter-spacing:var(--track-d);
+  white-space:nowrap;text-transform:lowercase}
+.topbar .tabs{flex:1 1 0%;min-width:0;display:flex;align-items:stretch;overflow-x:auto;
+  overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  border-left:var(--dot);border-color:rgba(255,255,255,.34);
+  mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 28px),transparent 100%);
+  -webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 28px),transparent 100%)}
+.topbar .tabs::-webkit-scrollbar{display:none}
+.tabs button{border:0;background:none;border-radius:0;color:rgba(255,255,255,.72);
+  padding:0 clamp(12px,1.6vw,20px);white-space:nowrap;font:500 var(--t-s)/1 var(--f-ui);
+  border-right:var(--dot);border-color:rgba(255,255,255,.34);cursor:pointer}
+.tabs button:hover{color:#fff;background:rgba(255,255,255,.06)}
+.tabs button{position:relative}
+.tabs button.on{color:var(--acc)}
+.tabs button.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--acc)}
+.themebtn{flex:0 0 auto;background:none;border:0;border-left:var(--dot);
+  border-color:rgba(255,255,255,.34);border-radius:0;color:rgba(255,255,255,.8);
+  padding:0 clamp(14px,2vw,22px);font:500 var(--t-s)/1 var(--f-ui);cursor:pointer;
+  display:flex;align-items:center;gap:8px}
+.themebtn:hover{color:#fff;background:rgba(255,255,255,.06)}
+.themebtn svg{width:16px;height:16px;display:block}
+
+/* ---------- cabeçalho do projeto ---------- */
+header{background:var(--bg);padding:var(--s5) var(--gutter) var(--s3);
+  display:flex;flex-wrap:wrap;gap:var(--s3) var(--s4);align-items:center;
+  width:min(var(--page),100%);margin:0 auto}
+header h1{font-size:var(--t-2xl);margin:0}
+header .sub{color:var(--mut);font-size:var(--t-s);display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap}
+header .meta{flex:1 1 100%;color:var(--mut);font:400 var(--t-xs)/1.3 var(--f-ui)}
+.pill{display:inline-block;padding:4px 12px;border-radius:var(--r-pill);
+  background:var(--warn-2);color:var(--color-obsidian);font-size:var(--t-xs);font-weight:500;
+  letter-spacing:var(--track);text-transform:uppercase}
+main{width:min(var(--page),100%);margin:0 auto;padding:0 var(--gutter) 80px}
+
+/* ---------- controles: tudo pílula, nada retangular ---------- */
+button{background:var(--paper);border:1.5px solid var(--line-2);border-radius:var(--r-pill);
+  padding:9px 18px;font:500 var(--t-s)/1.2 var(--f-ui);cursor:pointer;color:var(--ink);
+  white-space:nowrap}
+button:hover{border-color:var(--ink);color:var(--ink)}
+button.primary{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+button.primary:hover{background:var(--acc);border-color:var(--ink);color:var(--acc-ink)}
+button.danger{color:var(--acc);border-color:var(--bad-3)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{
+  outline:2px solid var(--acc);outline-offset:2px}
+.toolbar{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+.toolbar .spacer{flex:1}
+.seg{display:inline-flex;background:var(--paper);border:1.5px solid var(--line-2);
+  border-radius:var(--r-pill);padding:3px;gap:3px}
+.seg button{border:0;background:none;border-radius:var(--r-pill);padding:7px 16px;
+  color:var(--mut);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:var(--track)}
+.seg button.on{background:var(--acc);color:var(--acc-ink)}
+
+/* ---------- alertas ---------- */
+#alerts{display:flex;flex-wrap:wrap;gap:var(--s2);margin:0 0 var(--s4);align-items:center}
+#alerts:empty{display:none}
+.alert{font-size:var(--t-s)}
+.alert.erro{flex:1 1 100%;display:flex;gap:var(--s3);align-items:baseline;
+  background:#000000;color:var(--on-dark);border:0;
+  border-left:8px solid var(--acc);padding:14px var(--s5);border-radius:10px;
+  font-size:var(--t-m);font-weight:500}
+.alert.erro>span:first-child{font-family:var(--f-display);font-size:20px;color:var(--acc);
+  text-transform:uppercase;letter-spacing:var(--track-d)}
+.alert.aviso{flex:0 1 auto;background:var(--warn-2);border:0;color:var(--color-obsidian);
+  padding:5px 14px;border-radius:var(--r-pill);font-size:var(--t-xs);font-weight:500}
+
+/* ---------- veredito ---------- */
+.verdict{background:var(--paper);border-radius:var(--r-card);
+  padding:var(--pad-card);margin-bottom:var(--s4)}
+.verdict-top{display:flex;flex-wrap:wrap;gap:var(--s3);align-items:center;
+  padding-bottom:var(--s4);border-bottom:var(--dot)}
+.eyebrow{font-size:var(--t-xs);text-transform:uppercase;letter-spacing:var(--track);
+  color:var(--mut);font-weight:500}
+.verdict-top .eyebrow{margin-right:auto}
+.verdict-line{display:flex;gap:var(--s3);align-items:flex-start;margin:var(--s5) 0 var(--s6);
+  font-size:clamp(16px,1.6vw,20px);line-height:1.4;color:var(--ink);max-width:70ch;text-wrap:pretty}
+.verdict-line::before{content:"";flex:0 0 auto;width:12px;height:12px;border-radius:50%;
+  background:var(--acc);margin-top:7px}
+.verdict-line.ok::before{background:var(--pos)}
+.verdict-line b{font-weight:500;background:var(--warn-2);color:var(--color-obsidian);
+  padding:0 5px;border-radius:4px;box-decoration-break:clone}
+
+.kpis{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--s5) var(--s5)}
+.kpi{min-width:0}
+.kpi .l{color:var(--mut);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:var(--track);font-weight:500}
+.kpi .v{font-family:var(--f-display);font-size:var(--t-xl);line-height:var(--lh-tight);
+  margin-top:8px;letter-spacing:var(--track-d)}
+.kpi .s{color:var(--mut);font-size:var(--t-xs);margin-top:8px;line-height:1.35;text-wrap:pretty}
+.kpi .v.neg{color:var(--acc)}
+/* heróis */
+.kpis>.kpi:nth-child(5),.kpis>.kpi:nth-child(6),.kpis>.kpi:nth-child(7),.kpi.hero{
+  order:-1;grid-column:span 4;padding-left:var(--s5);border-left:var(--dot)}
+.kpis>.kpi:nth-child(5),.kpi.hero:first-child{padding-left:0;border-left:0}
+.kpis>.kpi:nth-child(5) .v,.kpis>.kpi:nth-child(6) .v,.kpis>.kpi:nth-child(7) .v,.kpi.hero .v{
+  font-size:48px}
+.kpis>.kpi:nth-child(5) .l,.kpis>.kpi:nth-child(6) .l,.kpis>.kpi:nth-child(7) .l,.kpi.hero .l{color:var(--ink-2)}
+/* contexto */
+.kpis>.kpi:nth-child(-n+4),.kpi.ctx{order:0;grid-column:span 3;border-top:var(--dot);padding-top:var(--s4)}
+.kpis>.kpi:nth-child(-n+4) .v,.kpi.ctx .v{font-size:var(--t-l)}
+/* secundários */
+.kpis>.kpi:nth-child(n+8),.kpi.mini{order:1;grid-column:span 6;display:flex;gap:var(--s2);
+  align-items:baseline;flex-wrap:wrap;color:var(--mut)}
+.kpis>.kpi:nth-child(n+8) .v,.kpi.mini .v{font-family:var(--f-ui);font-size:var(--t-m);
+  font-weight:500;color:var(--ink);margin:0}
+.kpis>.kpi:nth-child(n+8) .l,.kpi.mini .l{text-transform:none;letter-spacing:0;font-weight:500}
+.kpis>.kpi:nth-child(n+8) .s,.kpi.mini .s{margin:0}
+section.tab{display:none}
+section.tab.on{display:block}
+
+/* ---------- cartões e formulários ---------- */
+.card{background:var(--paper);border-radius:var(--r-card);padding:var(--pad-card);margin-bottom:var(--s4)}
+.card h2{font-size:var(--t-l);margin:0 0 var(--s5);max-width:32ch}
+.card h3{font-size:var(--t-xs);margin:var(--s6) 0 var(--s3);color:var(--mut);
+  text-transform:uppercase;letter-spacing:var(--track);font-family:var(--f-ui);font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:var(--s4)}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:var(--t-xs);color:var(--mut);
+  text-transform:uppercase;letter-spacing:var(--track);font-weight:500}
+label.f input,label.f select{font:500 var(--t-m)/1.2 var(--f-ui);color:var(--ink);padding:10px 16px;
+  border:1.5px solid var(--line-2);border-radius:var(--r-input);background:transparent;width:100%;min-width:0}
+label.f input:hover,label.f select:hover{border-color:var(--ink)}
+label.f input[type=checkbox]{width:auto}
+label.chk{display:flex;align-items:flex-start;gap:var(--s3);font-size:var(--t-s);color:var(--ink-2);
+  padding:var(--s3) 0;line-height:1.4}
+label.chk input{margin-top:3px;flex:0 0 auto;accent-color:var(--acc);width:16px;height:16px}
+.note{color:var(--mut);font-size:var(--t-s);margin:var(--s4) 0 0;max-width:78ch;text-wrap:pretty}
+.def{font-size:var(--t-s);color:var(--ink-2);margin:var(--s4) 0 0;padding:var(--s4) 0 0;
+  border-top:var(--dot);max-width:88ch;text-wrap:pretty}
+.def::before{content:"Premissa editável — ";text-transform:uppercase;letter-spacing:var(--track);
+  font-size:var(--t-xs);font-weight:500;color:var(--acc)}
+.def b{color:var(--color-obsidian);font-weight:500;background:var(--warn-2);padding:0 4px;border-radius:3px}
+
+/* ---------- tabelas ---------- */
+.tw{overflow-x:auto;
+  background:linear-gradient(to right,var(--paper) 30%,rgba(0,0,0,0)),
+    linear-gradient(to left,var(--paper) 30%,rgba(0,0,0,0)) 100% 0,
+    radial-gradient(farthest-side at 0 50%,var(--line),rgba(0,0,0,0)),
+    radial-gradient(farthest-side at 100% 50%,var(--line),rgba(0,0,0,0)) 100% 0;
+  background-repeat:no-repeat;background-size:44px 100%,44px 100%,14px 100%,14px 100%;
+  background-attachment:local,local,scroll,scroll}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:var(--t-s)}
+th,td{padding:9px var(--s3);border-bottom:var(--dot);text-align:right;white-space:nowrap}
+th{font-weight:500;color:var(--mut);font-size:var(--t-xs);text-transform:uppercase;
+  letter-spacing:var(--track);background:var(--paper);border-bottom:1.5px solid var(--line-3);
+  position:sticky;top:0}
+th:first-child,td:first-child{text-align:left}
+tbody tr:hover td{background:var(--paper-2)}
+td input,td select{font:500 var(--t-s)/1.2 var(--f-ui);padding:6px 12px;border:1.5px solid var(--line-2);
+  border-radius:var(--r-input);width:118px;text-align:right;background:transparent;color:var(--ink)}
+td input:hover,td select:hover{border-color:var(--ink)}
+td input.w{width:200px;text-align:left}
+td input.s{width:74px}
+td select{text-align:left;width:auto}
+tr.tot td{font-weight:500;border-top:1.5px solid var(--ink);border-bottom:0;
+  background:var(--paper-2);color:var(--ink)}
+td.neg{color:var(--acc)}
+td.mark,tr.mark td{background:var(--bad-2)}
+tr.mark td:first-child{box-shadow:inset 4px 0 0 var(--acc)}
+.hide{display:none!important}
+#tblMeses th:first-child,#tblMeses td:first-child{position:sticky;left:0;background:var(--paper);z-index:1}
+#tblMeses th:first-child{z-index:2}
+#tblMeses tr.tot td:first-child{background:var(--paper-2)}
+.colswitch{display:inline-flex;gap:var(--s2);align-items:center;font-size:var(--t-s);
+  color:var(--ink-2);margin:0 0 var(--s4);cursor:pointer}
+.colswitch input{accent-color:var(--acc);width:16px;height:16px}
+body:has(#cbCols:checked) #tblMeses :is(th,td):is(:nth-child(2),:nth-child(3),:nth-child(4),
+  :nth-child(6),:nth-child(7),:nth-child(8),:nth-child(9),:nth-child(10),:nth-child(11),
+  :nth-child(12),:nth-child(13)){display:none}
+.tw-hint{font-size:var(--t-xs);color:var(--mut);margin:var(--s3) 0 0}
+
+/* ---------- barra empilhada (CAPEX) ---------- */
+.stack{display:flex;height:44px;border-radius:var(--r-pill);overflow:hidden}
+.stack span{display:block;min-width:3px}
+.legend{list-style:none;margin:var(--s5) 0 0;padding:0;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:var(--s3) var(--s5)}
+.legend li{display:flex;gap:var(--s2);align-items:center;font-size:var(--t-s);color:var(--ink-2);
+  white-space:nowrap;padding-bottom:var(--s2);border-bottom:var(--dot)}
+.legend i{flex:0 0 auto;width:12px;height:12px;border-radius:50%}
+.legend b{margin-left:auto;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink)}
+.legend em{color:var(--mut);font-style:normal;font-size:var(--t-xs);width:5ch;text-align:right}
+.callout{display:flex;flex-wrap:wrap;gap:var(--s3) var(--s5);align-items:center;
+  margin:var(--s5) 0 0;padding:var(--pad-card);background:var(--acc);color:var(--acc-ink);
+  border-radius:10px}
+.callout .eyebrow{color:var(--acc-ink);opacity:.7}
+.callout .cv{font-family:var(--f-display);font-size:var(--t-2xl);line-height:.9;color:var(--acc-ink)}
+.callout .cl{font-size:var(--t-s);color:var(--acc-ink);max-width:52ch;text-wrap:pretty;flex:1 1 260px}
+.callout .cl b{font-weight:500;text-decoration:underline;text-decoration-thickness:2px}
+
+/* ---------- cascata (suprimentos) ---------- */
+.casc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.casc li{display:grid;grid-template-columns:minmax(160px,1.1fr) minmax(0,3fr) 116px;
+  gap:var(--s4);align-items:center;font-size:var(--t-s);padding:var(--s2) 0}
+.casc .cl{color:var(--ink-2)}
+.casc .bar{height:26px;position:relative;background:var(--paper-2);border-radius:var(--r-pill)}
+.casc .bar i{position:absolute;inset:0 auto 0 0;border-radius:var(--r-pill);background:var(--ink)}
+.casc .cv{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.casc li.cut .cl,.casc li.cut .cv{color:var(--acc)}
+.casc li.cut .bar{background:transparent}
+.casc li.cut .bar i{left:auto;right:0;background:repeating-linear-gradient(135deg,
+  var(--acc) 0 4px,var(--acc-wash) 4px 9px)}
+.casc li.step{border-top:var(--dot);padding-top:var(--s3)}
+.casc li.final .cl{color:var(--ink);font-weight:500}
+.casc li.final .cv{font-family:var(--f-display);font-size:var(--t-l);color:var(--ink)}
+.casc li.final .bar i{background:var(--ink)}
+
+/* ---------- unidades como cards ---------- */
+.units{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:var(--s4)}
+.unit{border:1.5px solid var(--line-2);border-radius:var(--r-card);background:transparent;padding:var(--pad-card)}
+.unit-top{display:flex;gap:var(--s3);align-items:center;margin-bottom:var(--s4)}
+.unit-top input.w{flex:1;font:400 var(--t-l)/1 var(--f-display);letter-spacing:var(--track-d);
+  padding:6px 12px;border:1.5px solid transparent;background:transparent;border-radius:var(--r-input);
+  width:auto;text-align:left;color:var(--ink)}
+.unit-top input.w:hover,.unit-top input.w:focus{border-color:var(--line-2)}
+.unit-top button{width:38px;height:38px;padding:0;flex:0 0 auto;line-height:1}
+.unit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,104px),1fr));gap:var(--s3)}
+.unit-grid input,.unit-grid select{width:100%!important;text-align:left}
+.flatbox{display:flex;flex-wrap:wrap;gap:var(--s4);align-items:flex-end;margin-top:var(--s5);
+  padding-top:var(--s4);border-top:var(--dot)}
+.flatbox label.f{flex:0 0 132px}
+.flatbox label.f input{width:100%;font:400 var(--t-xl)/1 var(--f-display);text-align:left;padding:8px 18px}
+.flatbox .fh{flex:1 1 180px;font-size:var(--t-xs);color:var(--mut);padding-bottom:8px;text-wrap:pretty}
+details.mdet{margin-top:var(--s4);border-top:var(--dot);padding-top:var(--s3)}
+details.mdet>summary{cursor:pointer;font-size:var(--t-xs);color:var(--mut);font-weight:500;
+  text-transform:uppercase;letter-spacing:var(--track);list-style:none;display:flex;gap:var(--s2);align-items:center}
+details.mdet>summary::-webkit-details-marker{display:none}
+details.mdet>summary::before{content:"›";display:inline-block;transition:transform .12s;font-size:15px;color:var(--acc)}
+details.mdet[open]>summary::before{transform:rotate(90deg)}
+.mgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--s2);margin-top:var(--s4)}
+.mgrid label{display:flex;flex-direction:column;gap:4px;font-size:var(--t-xs);color:var(--mut);text-align:center}
+.mgrid input{width:100%;font:500 var(--t-s)/1.2 var(--f-ui);text-align:center;padding:7px 2px;
+  border:1.5px solid var(--line-2);border-radius:var(--r-input);background:transparent;color:var(--ink)}
+.mgrid input:hover{border-color:var(--ink)}
+
+/* ---------- gráfico ---------- */
+.chartwrap{border-radius:var(--r-card);background:var(--paper-2);padding:var(--s4);overflow:hidden}
+svg.chart{display:block;width:100%;height:auto}
+.chart-key{display:flex;flex-wrap:wrap;gap:var(--s3) var(--s5);margin:var(--s4) 0 0;
+  font-size:var(--t-xs);color:var(--mut)}
+.chart-key span{display:flex;gap:8px;align-items:center}
+.chart-key i{width:16px;height:2.5px;background:var(--ink);display:block}
+.chart-key i.z{height:0;border-top:1.5px dotted var(--line-3)}
+.chart-key i.n{height:12px;width:12px;border-radius:50%;background:var(--bad-2);border:1.5px solid var(--bad-3)}
+
+textarea{width:100%;min-height:260px;font:400 var(--t-s)/1.6 var(--f-mono);
+  border:1.5px solid var(--line-2);border-radius:var(--r-medium);padding:var(--s4);
+  background:transparent;color:var(--ink)}
+pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0;color:var(--ink-2)}
+.p-only{display:none}
+
+/* ---------- fluidez ---------- */
+@media (max-width:1000px){
+  .kpis>.kpi:nth-child(5),.kpis>.kpi:nth-child(6),.kpis>.kpi:nth-child(7),.kpi.hero{
+    grid-column:span 6;padding-left:0;border-left:0;border-top:var(--dot);padding-top:var(--s4)}
+  .kpis>.kpi:nth-child(5),.kpi.hero:first-child{grid-column:span 12}
+  .kpis>.kpi:nth-child(-n+4),.kpi.ctx{grid-column:span 6}
+}
+@media (max-width:900px){
+  .legend{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .brand .wm{display:none}
+  .brand{padding:0 14px}
+  .topbar{min-height:52px}
+}
+@media (max-width:720px){
+  .tabs button{padding:0 14px}
+  .themebtn{padding:0 14px}
+  .themebtn span{display:none}
+  .kpis>.kpi:nth-child(5),.kpis>.kpi:nth-child(6),.kpis>.kpi:nth-child(7),.kpi.hero,
+  .kpis>.kpi:nth-child(-n+4),.kpi.ctx,.kpis>.kpi:nth-child(n+8),.kpi.mini{grid-column:span 12}
+  .mgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid{grid-template-columns:1fr}
+  .flatbox label.f{flex:1 1 100%}
+  .verdict-line{font-size:16px}
+  .casc li{grid-template-columns:1fr 116px;gap:var(--s2)}
+  .casc .bar{grid-column:1/-1;order:3}
+  .kpis{gap:var(--s4)}
+}
+
+/* ============================================================
+   SNAPSHOT: no app real as seções são abas. Aqui todas aparecem.
+   ============================================================ */
+section.tab{display:block!important;margin-bottom:var(--s6)}
+section.tab::before{content:attr(id);display:block;font:500 var(--t-xs)/1 var(--f-ui);
+  color:var(--acc);text-transform:uppercase;letter-spacing:.16em;margin:0 0 var(--s3)}
+
+/* ============================================================
+   IMPRESSÃO — 1 página A4
+   ============================================================ */
+@media print{
+  @page{size:A4 portrait;margin:10mm}
+  :root{--t-3xl:26px;--t-2xl:20px;--t-xl:16px;--t-l:13px;--t-m:9.2px;--t-s:8.2px;--t-xs:7.2px;
+    --s5:10px;--s4:8px;--s3:6px;--s6:12px;--pad-card:0;--gutter:0;--r-card:0;
+    --bg:#fff;--paper:#fff;--paper-2:#fff;--ink:#000;--ink-2:#222;--mut:#555;
+    --line:rgba(0,0,0,.25);--dot:1px dotted rgba(0,0,0,.4)}
+  body{background:#fff;color:#000;font-size:9.2px}
+  .topbar,.toolbar,.tabs,.themebtn,button,.colswitch,.tw-hint,.note,.def,.alert.aviso,
+  details.mdet,.chart-key{display:none!important}
+  header{padding:0 0 6px;border-bottom:1px solid #999;width:auto}
+  header .meta{display:none}
+  main{padding:0;width:auto}
+  .verdict{padding:0;margin:8px 0 0;border-bottom:1px solid #999;padding-bottom:8px;background:none}
+  .verdict-top{border:0;padding:0}
+  .verdict-line{margin:6px 0 10px;font-size:11px}
+  .verdict-line b{background:none;padding:0}
+  .kpis{gap:8px 14px}
+  .card{padding:0;margin:10px 0 0;break-inside:avoid;background:none}
+  .card h2{font-size:12px;margin:0 0 4px;border-bottom:1px solid #ccc;padding-bottom:2px}
+  section.tab{display:none!important;margin:0}
+  section.tab::before{display:none}
+  #tab-fluxo{display:block!important}
+  #tab-fluxo .card:first-child .tw{display:none}
+  .chartwrap{padding:0;background:none}
+  .p-only{display:block!important}
+  table{font-size:8px}
+  th,td{padding:2px 4px}
+  th{background:none;border-bottom:1px solid #999;color:#000}
+  .p-prem{display:grid;grid-template-columns:repeat(4,1fr);gap:4px 12px;margin:8px 0 0;
+    font-size:8.2px;border-top:1px solid #ccc;padding-top:6px}
+  .p-prem div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted #ddd}
+  .p-prem span{color:#555}
+  .p-foot{margin-top:10px;padding-top:4px;border-top:1px solid #ccc;font-size:7.2px;color:#555}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="brand" href="#tab-projeto"><span class="mark" aria-hidden="true"><svg viewBox="0 0 26 26"><path d="M2 6 L13 19 L24 6" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="square"></path></svg></span><span class="wm">airbnb calc</span></a>
+  <nav class="tabs" id="tabs" aria-label="Seções">
+    <button data-t="projeto" class="on">Projeto</button>
+    <button data-t="capex" class="">CAPEX</button>
+    <button data-t="operacao" class="">Operação</button>
+    <button data-t="demanda" class="">Demanda</button>
+    <button data-t="suprimentos" class="">Suprimentos</button>
+    <button data-t="risco">Risco &amp; rollout</button>
+    <button data-t="fluxo" class="">Fluxo de caixa</button>
+    <button data-t="formulas">Fórmulas</button>
+    <button data-t="json">JSON</button>
+  </nav>
+  <button class="themebtn" id="btnTheme" type="button" aria-pressed="false" title="Alternar claro / escuro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M19.8 4.2l-2.1 2.1M6.3 17.7l-2.1 2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg><span id="themeLabel">Escuro</span></button>
+</div>
+<header>
+  <h1 id="hNome">Meu Airbnb</h1>
+  <span class="sub"><span class="pill" id="hTipo">apartamento</span> <span id="hCidade">São Paulo / SP</span></span>
+  <div class="toolbar" style="margin-left:auto">
+    <button id="btnExport">Exportar JSON</button>
+    <label><input type="file" id="fileImport" accept="application/json,.json" class="hide" value=""><button id="btnImport">Importar JSON</button></label>
+    <button id="btnReset" class="danger">Resetar</button>
+    <button id="btnPrint" class="primary">Imprimir resumo</button>
+  </div>
+  <span class="meta">airbnb-calc.v1 · roda 100% no browser · dados ficam no seu navegador</span>
+</header>
+<main>
+
+  <div class="alerts" id="alerts"><div class="alert erro"><span>Erro</span><span>Horizonte fora do intervalo permitido (1–10 anos). Corrija para recalcular. <em style="font-weight:400;font-style:normal">— exemplo de erro bloqueante; some quando não há erro</em></span></div><div class="alert aviso">Impostos sobre receita = 0%: preencha com seu contador (carnê-leão / PJ)</div><div class="alert aviso">Saldo inicial abaixo da reserva sugerida (R$ 8.082 = 3 meses de OPEX)</div></div>
+
+  <div class="verdict">
+    <div class="verdict-top">
+      <span class="eyebrow">Veredito · horizonte de 5 anos</span>
+      <span class="eyebrow" style="color:var(--ink-2)">Cenário de ocupação</span>
+      <div class="seg" id="segCenario">
+        <button data-c="conservador" class="">Conservador</button>
+        <button data-c="base" class="on">Base</button>
+        <button data-c="otimista">Otimista</button>
+      </div>
+    </div>
+
+    <p class="verdict-line" id="veredito"><span>Com estas premissas o projeto <b>não se paga em 5 anos</b>: sobra R$ 25.884 por ano sobre um CAPEX de R$ 602.500 — <b>4,3% ao ano</b>, ou 23 anos de retorno no ritmo atual.</span></p>
+
+    <div class="kpis" id="kpis"><div class="kpi"><div class="l">CAPEX total</div><div class="v">R$ 602.500</div><div class="s">compra + cartório + obra + mobiliário + equip.</div></div><div class="kpi"><div class="l">Receita bruta ano 1</div><div class="v">R$ 75.600</div><div class="s">ADR médio R$ 350 · occ. 60% · RevPAR R$ 210</div></div><div class="kpi"><div class="l">Taxas ano 1</div><div class="v">R$ 17.388</div><div class="s">plataforma + admin + impostos</div></div><div class="kpi"><div class="l">OPEX ano 1</div><div class="v">R$ 32.328</div><div class="s">fixos + caseiros + suprimentos</div></div><div class="kpi"><div class="l">Resultado ano 1</div><div class="v">R$ 25.884</div><div class="s">4,3% do CAPEX · R$ 2.157 / mês</div></div><div class="kpi"><div class="l">Payback</div><div class="v neg">não paga em 5 anos</div><div class="s">resultado acumulado não cobre o CAPEX</div></div><div class="kpi"><div class="l">Occupancy de equilíbrio</div><div class="v">25%</div><div class="s">menor ocupação flat com resultado ano 1 ≥ 0 (base)</div></div><div class="kpi"><div class="l">Reserva sugerida</div><div class="v">R$ 8.082</div><div class="s">3 meses de OPEX · saldo inicial R$ 0</div></div><div class="kpi"><div class="l">Caixa fim ano 5</div><div class="v neg">R$ -473.080</div><div class="s">primeiro mês negativo: 0</div></div></div>
+  </div>
+
+  <div class="p-only p-prem">
+    <div>Preço de compra <span>R$ 500.000</span></div>
+    <div>ITBI + cartório <span>R$ 22.500</span></div>
+    <div>Obra + fit-out <span>R$ 40.000</span></div>
+    <div>Mobiliário + equip. <span>R$ 40.000</span></div>
+    <div>Diária média (ADR) <span>R$ 350</span></div>
+    <div>Ocupação <span>60% (base)</span></div>
+    <div>Administradora <span>20%</span></div>
+    <div>Plataforma <span>3%</span></div>
+    <div>Impostos <span>0% — a confirmar</span></div>
+    <div>Suprimentos <span>R$ 66 / noite</span></div>
+    <div>OPEX fixo <span>R$ 1.500 / mês</span></div>
+    <div>Caseiro CLT <span>desativado</span></div>
+  </div>
+
+  
+
+  <!-- PROJETO -->
+  <section class="tab on" id="tab-projeto">
+    <div class="card">
+      <h2>Intenção e tipo</h2>
+      <div class="grid">
+        <label class="f">Nome do projeto<input data-k="projeto.nome" data-t="str" value="Meu Airbnb"></label>
+        <label class="f">Cidade<input data-k="projeto.cidade" data-t="str" value="São Paulo"></label>
+        <label class="f">UF<input data-k="projeto.uf" data-t="str" maxlength="2" value="SP"></label>
+        <label class="f">Tipo de projeto<select data-k="projeto.tipo" data-t="str">
+          <option value="apartamento" selected="">apartamento — compra apto pronto</option>
+          <option value="casa">casa — compra casa pronta</option>
+          <option value="terreno">terreno — só terreno, sem receita</option>
+          <option value="terreno_casas">terreno_casas — terreno + N casas</option>
+        </select></label>
+        <label class="f">Objetivo<select data-k="projeto.objetivo" data-t="str">
+          <option value="yield" selected="">yield — renda de diárias</option>
+          <option value="flip">flip pós-obra</option>
+          <option value="misto">uso misto (dono + Airbnb)</option>
+        </select></label>
+        <label class="f">Horizonte (anos, 1–10)<input type="number" min="1" max="10" step="1" data-k="projeto.horizonte_anos" data-t="int" value="5"></label>
+        <label class="f">Moeda<input value="BRL" disabled=""></label>
+        <label class="f">Saldo inicial de caixa (BRL)<input type="number" step="1000" data-k="operacao.saldo_inicial_brl" data-t="num" value="0"></label>
+      </div>
+      <p class="note">Tipo <b>terreno</b>: nenhuma unidade opera (receita 0); só IPTU e outros custos correm. Tipo <b>terreno_casas</b>: use o assistente abaixo para gerar CAPEX e unidades; as casas abrem no mês seguinte ao fim da obra.</p>
+    </div>
+
+    <div class="card" id="cardObra">
+      <h2>Assistente terreno + casas</h2>
+      <div class="grid">
+        <label class="f">Área do terreno (m²)<input type="number" step="1" data-k="obra.area_terreno_m2" data-t="num" value="1000"></label>
+        <label class="f">Preço do terreno (BRL)<input type="number" step="1000" data-k="obra.preco_terreno_brl" data-t="num" value="400000"></label>
+        <label class="f">Nº de casas<input type="number" step="1" min="0" data-k="obra.n_casas" data-t="int" value="4"></label>
+        <label class="f">m² construído por casa<input type="number" step="1" data-k="obra.m2_por_casa" data-t="num" value="60"></label>
+        <label class="f">Padrão construtivo<select data-k="obra.padrao" data-t="str">
+          <option value="economico">econômico</option><option value="medio" selected="">médio</option><option value="alto">alto</option><option value="custom">custom (usa o R$/m² abaixo)</option>
+        </select></label>
+        <label class="f">R$/m² de obra<input type="number" step="50" data-k="obra.custo_m2_brl" data-t="num" value="3500"></label>
+        <label class="f">Prazo da obra (meses)<input type="number" step="1" min="0" data-k="obra.prazo_meses" data-t="int" value="12"></label>
+        <label class="f">Contingência (%)<input type="number" step="1" data-k="obra.contingencia_pct" data-t="pct" value="10"></label>
+        <label class="f">Projeto / arquitetura / taxas (BRL)<input type="number" step="1000" data-k="obra.projeto_taxas_brl" data-t="num" value="40000"></label>
+        <label class="f">Decoração por casa (BRL)<input type="number" step="1000" data-k="obra.decor_por_casa_brl" data-t="num" value="25000"></label>
+        <label class="f">Equipamentos por casa (BRL)<input type="number" step="1000" data-k="obra.equip_por_casa_brl" data-t="num" value="15000"></label>
+      </div>
+      <p class="def">R$/m² por padrão: econômico <b>2.500</b>, médio <b>3.500</b>, alto <b>5.000</b> — estimativa genérica, <b>não é CUB oficial</b>. Confirme com orçamento local. Contingência default <b>10%</b> sobre obra + decoração + equipamentos.</p>
+      <div class="toolbar" style="margin-top:var(--s4)">
+        <button class="primary" id="btnGerarObra">Gerar CAPEX e unidades a partir do terreno</button>
+        <span class="note" style="margin:0">Substitui as linhas de CAPEX e a lista de unidades.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPEX -->
+  <section class="tab on" id="tab-capex">
+    <div class="card">
+      <h2>CAPEX — R$ 602.500 até abrir a porta</h2>
+      <div class="stack" role="img" aria-label="Composição do CAPEX: aquisição 83%, cartório e ITBI 3,7%, obra 6,6%, mobiliário 4,1%, equipamentos 2,5%.">
+        <span style="width:82.99%;background:var(--cat-aquisicao)"></span>
+        <span style="width:3.73%;background:var(--cat-cartorio)"></span>
+        <span style="width:6.64%;background:var(--cat-obra)"></span>
+        <span style="width:4.15%;background:var(--cat-mobiliario)"></span>
+        <span style="width:2.49%;background:var(--cat-equip)"></span>
+      </div>
+      <ul class="legend">
+        <li><i style="background:var(--cat-aquisicao)"></i>Aquisição<em>83%</em><b>R$ 500.000</b></li>
+        <li><i style="background:var(--cat-cartorio)"></i>ITBI + cartório<em>3,7%</em><b>R$ 22.500</b></li>
+        <li><i style="background:var(--cat-obra)"></i>Obra / fit-out<em>6,6%</em><b>R$ 40.000</b></li>
+        <li><i style="background:var(--cat-mobiliario)"></i>Mobiliário<em>4,2%</em><b>R$ 25.000</b></li>
+        <li><i style="background:var(--cat-equip)"></i>Equipamentos<em>2,5%</em><b>R$ 15.000</b></li>
+      </ul>
+      <div class="callout">
+        <div><div class="eyebrow">Custo burocrático</div><div class="cv">4,5%</div></div>
+        <div class="cl"><b>R$ 22.500</b> em ITBI (3%) e cartório (1,5%) sobre o preço de compra — dinheiro que sai do caixa e não vira imóvel nem receita. Típico no Brasil: 3,5% a 5%.</div>
+      </div>
+      <h3>Linhas de CAPEX</h3>
+      <div class="grid" style="margin-bottom:var(--s3)">
+        <label class="f">ITBI (% sobre a linha base)<input type="number" step="0.1" data-k="aquisicao_pct.itbi_pct" data-t="pct" value="3"></label>
+        <label class="f">Cartório: escritura + registro + certidões (%)<input type="number" step="0.1" data-k="aquisicao_pct.cartorio_pct" data-t="pct" value="1.5"></label>
+        <label class="f">&nbsp;<button id="btnAplicarPct">Recalcular sobre a linha “compra”/“terreno”</button></label>
+      </div>
+      <div class="tw"><table id="tblCapex"><tbody><tr><th>id</th><th>Categoria</th><th>Descrição</th><th>Valor (BRL)</th><th>Mês inicial</th><th>Meses</th><th></th></tr><tr><td><input class="s" type="text" step="any" data-p="capex.0.id" value="compra"></td><td><select data-p="capex.0.categoria"><option value="aquisicao" selected="">aquisicao</option><option value="cartorio">cartorio</option><option value="obra">obra</option><option value="mobiliario">mobiliario</option><option value="equipamentos">equipamentos</option><option value="projeto">projeto</option><option value="contingencia">contingencia</option><option value="outros">outros</option></select></td><td><input class="w" type="text" step="any" data-p="capex.0.descricao" value="Preço de compra"></td><td><input class="" type="number" step="any" data-p="capex.0.valor_brl" value="500000"></td><td><input class="s" type="number" step="1" data-p="capex.0.mes_inicio" value="0"></td><td><input class="s" type="number" step="1" data-p="capex.0.meses" value="1"></td><td><button data-del="capex.0">×</button></td></tr><tr><td><input class="s" type="text" step="any" data-p="capex.1.id" value="itbi"></td><td><select data-p="capex.1.categoria"><option value="aquisicao">aquisicao</option><option value="cartorio" selected="">cartorio</option><option value="obra">obra</option><option value="mobiliario">mobiliario</option><option value="equipamentos">equipamentos</option><option value="projeto">projeto</option><option value="contingencia">contingencia</option><option value="outros">outros</option></select></td><td><input class="w" type="text" step="any" data-p="capex.1.descricao" value="ITBI (3% default)"></td><td><input class="" type="number" step="any" data-p="capex.1.valor_brl" value="15000"></td><td><input class="s" type="number" step="1" data-p="capex.1.mes_inicio" value="0"></td><td><input class="s" type="number" step="1" data-p="capex.1.meses" value="1"></td><td><button data-del="capex.1">×</button></td></tr><tr><td><input class="s" type="text" step="any" data-p="capex.2.id" value="cartorio"></td><td><select data-p="capex.2.categoria"><option value="aquisicao">aquisicao</option><option value="cartorio" selected="">cartorio</option><option value="obra">obra</option><option value="mobiliario">mobiliario</option><option value="equipamentos">equipamentos</option><option value="projeto">projeto</option><option value="contingencia">contingencia</option><option value="outros">outros</option></select></td><td><input class="w" type="text" step="any" data-p="capex.2.descricao" value="Escritura + registro + certidões (1,5% default)"></td><td><input class="" type="number" step="any" data-p="capex.2.valor_brl" value="7500"></td><td><input class="s" type="number" step="1" data-p="capex.2.mes_inicio" value="0"></td><td><input class="s" type="number" step="1" data-p="capex.2.meses" value="1"></td><td><button data-del="capex.2">×</button></td></tr><tr><td><input class="s" type="text" step="any" data-p="capex.3.id" value="obra"></td><td><select data-p="capex.3.categoria"><option value="aquisicao">aquisicao</option><option value="cartorio">cartorio</option><option value="obra" selected="">obra</option><option value="mobiliario">mobiliario</option><option value="equipamentos">equipamentos</option><option value="projeto">projeto</option><option value="contingencia">contingencia</option><option value="outros">outros</option></select></td><td><input class="w" type="text" step="any" data-p="capex.3.descricao" value="Reforma / fit-out"></td><td><input class="" type="number" step="any" data-p="capex.3.valor_brl" value="40000"></td><td><input class="s" type="number" step="1" data-p="capex.3.mes_inicio" value="0"></td><td><input class="s" type="number" step="1" data-p="capex.3.meses" value="1"></td><td><button data-del="capex.3">×</button></td></tr><tr><td><input class="s" type="text" step="any" data-p="capex.4.id" value="decor"></td><td><select data-p="capex.4.categoria"><option value="aquisicao">aquisicao</option><option value="cartorio">cartorio</option><option value="obra">obra</option><option value="mobiliario" selected="">mobiliario</option><option value="equipamentos">equipamentos</option><option value="projeto">projeto</option><option value="contingencia">contingencia</option><option value="outros">outros</option></select></td><td><input class="w" type="text" step="any" data-p="capex.4.descricao" value="Decoração + mobiliário"></td><td><input class="" type="number" step="any" data-p="capex.4.valor_brl" value="25000"></td><td><input class="s" type="number" step="1" data-p="capex.4.mes_inicio" value="0"></td><td><input class="s" type="number" step="1" data-p="capex.4.meses" value="1"></td><td><button data-del="capex.4">×</button></td></tr><tr><td><input class="s" type="text" step="any" data-p="capex.5.id" value="equip"></td><td><select data-p="capex.5.categoria"><option value="aquisicao">aquisicao</option><option value="cartorio">cartorio</option><option value="obra">obra</option><option value="mobiliario">mobiliario</option><option value="equipamentos" selected="">equipamentos</option><option value="projeto">projeto</option><option value="contingencia">contingencia</option><option value="outros">outros</option></select></td><td><input class="w" type="text" step="any" data-p="capex.5.descricao" value="Equipamentos (A/C, TV, enxoval, fechadura)"></td><td><input class="" type="number" step="any" data-p="capex.5.valor_brl" value="15000"></td><td><input class="s" type="number" step="1" data-p="capex.5.mes_inicio" value="0"></td><td><input class="s" type="number" step="1" data-p="capex.5.meses" value="1"></td><td><button data-del="capex.5">×</button></td></tr><tr class="tot"><td colspan="3">CAPEX total</td><td id="capexTot">R$ 602.500</td><td colspan="3"></td></tr></tbody></table></div>
+      <div class="toolbar" style="margin-top:var(--s3)"><button id="btnAddCapex">+ linha</button></div>
+      <p class="def">ITBI <b>3%</b> (SP capital; 2%–3% em geral), cartório <b>1,5%</b> (1%–2%). <b>A alíquota real depende do município — confirme.</b></p>
+      <p class="note">Mês 0 = antes do primeiro mês de operação. “Meses” espalha o valor igualmente a partir do mês inicial (obra). Categorias: aquisicao, cartorio, obra, mobiliario, equipamentos, projeto, contingencia, outros.</p>
+    </div>
+  </section>
+
+  <!-- OPERAÇÃO -->
+  <section class="tab on" id="tab-operacao">
+    <div class="card">
+      <h2>Operação e gente — OPEX recorrente</h2>
+      <div class="grid">
+        <label class="f">Modelo<select data-k="operacao.modelo" data-t="str">
+          <option value="autogestao">autogestão</option><option value="administradora" selected="">administradora</option><option value="hibrido">híbrido</option>
+        </select></label>
+        <label class="f">Comissão administradora (% da receita de diárias)<input type="number" step="1" data-k="operacao.admin_pct" data-t="pct" value="20"></label>
+        <label class="f">Taxa da plataforma / host (%)<input type="number" step="0.5" data-k="operacao.plataforma_pct" data-t="pct" value="3"></label>
+        <label class="f">Impostos sobre receita (%)<input type="number" step="0.5" data-k="operacao.impostos_pct" data-t="pct" value="0"></label>
+        <label class="f">Condomínio / mês / unidade ativa<input type="number" step="50" data-k="operacao.condominio_mes_brl" data-t="num" value="800"></label>
+        <label class="f">IPTU / ano (projeto inteiro)<input type="number" step="100" data-k="operacao.iptu_ano_brl" data-t="num" value="2400"></label>
+        <label class="f">Energia + água + internet / mês / unidade<input type="number" step="50" data-k="operacao.utilidades_mes_brl" data-t="num" value="400"></label>
+        <label class="f">Seguro / mês / unidade ativa<input type="number" step="10" data-k="operacao.seguro_mes_brl" data-t="num" value="100"></label>
+        <label class="f">Outros custos fixos / mês (projeto)<input type="number" step="50" data-k="operacao.outros_mes_brl" data-t="num" value="0"></label>
+      </div>
+      <label class="chk"><input type="checkbox" data-k="operacao.suprimentos_na_admin" data-t="bool"> Suprimentos (limpeza, amenities) já inclusos na comissão da administradora — não abater de novo</label>
+      <p class="def">Admin <b>20%</b> (mercado BR 15%–35%), plataforma <b>3%</b> (3%–5%), impostos <b>0%</b> — <b>preencha com seu contador</b>. Admin só é cobrada nos modelos administradora e híbrido.</p>
+
+      <h3>Caseiro CLT (multi-casa)</h3>
+      <label class="chk"><input type="checkbox" data-k="caseiros.ativo" data-t="bool"> Caseiro ativo</label>
+      <div class="grid" style="margin-top:var(--s2)">
+        <label class="f">Salário bruto / mês (BRL)<input type="number" step="100" data-k="caseiros.salario_bruto_mes" data-t="num" value="2500"></label>
+        <label class="f">Multiplicador de encargos<input type="number" step="0.05" data-k="caseiros.encargos_mult" data-t="num" value="1.8"></label>
+        <label class="f">Casas por caseiro<input type="number" step="1" min="1" data-k="caseiros.casas_por_caseiro" data-t="int" value="5"></label>
+        <label class="f">Bônus (% sobre a base)<input type="number" step="0.5" data-k="caseiros.bonus_pct" data-t="pct" value="5"></label>
+        <label class="f">Base do bônus (obrigatório)<select data-k="caseiros.bonus_base" data-t="str">
+          <option value="receita_bruta">receita bruta das diárias</option>
+          <option value="liquida_pos_plataforma">líquida após plataforma</option>
+          <option value="liquida_pos_admin" selected="">líquida após plataforma e admin</option>
+        </select></label>
+      </div>
+      <div id="caseiroResumo" class="note">Caseiro desativado.</div>
+      <p class="def">Encargos <b>1,8×</b> (≈80% de 13º, férias, FGTS, INSS, provisões) — <b>estimativa, não tabela oficial</b>. Nº de caseiros = ⌈unidades ativas ÷ casas por caseiro⌉. Com administradora, o default da base é <b>líquida após admin</b> para os dois não morderem a mesma fatia.</p>
+    </div>
+  </section>
+
+  <!-- DEMANDA -->
+  <section class="tab on" id="tab-demanda">
+    <div class="card">
+      <h2>Demanda e preço</h2>
+      <div class="grid">
+        <label class="f">Noites por mês<input type="number" step="1" data-k="operacao.noites_mes" data-t="num" value="30"></label>
+        <label class="f">Estadia média (noites) → checkouts<input type="number" step="0.5" data-k="operacao.estada_media" data-t="num" value="3"></label>
+        <label class="f">Taxa de limpeza cobrada do hóspede (BRL / checkout)<input type="number" step="10" data-k="operacao.taxa_limpeza_hospede_brl" data-t="num" value="0"></label>
+        <label class="f">Quem fica com a taxa de limpeza<select data-k="operacao.limpeza_fica_com_host" data-t="bool">
+          <option value="true" selected="">host (vira receita)</option><option value="false">pass-through (não entra no caixa)</option>
+        </select></label>
+      </div>
+      <p class="def">30 noites/mês, estadia média <b>3</b> noites, taxa de limpeza <b>0</b>. Se fica com o host, entra na receita bruta e paga plataforma e impostos, mas não comissão da administradora.</p>
+      <h3>Unidades</h3>
+      <div class="units" id="tblUnidades">
+        <div class="unit">
+        <div class="unit-top">
+          <input class="w" type="text" step="any" data-p="unidades.0.nome" value="Unidade 1">
+          <button data-del="unidades.0" title="Remover unidade" aria-label="Remover unidade">×</button>
+        </div>
+        <div class="unit-grid">
+          <label class="f">Tipologia<select data-p="unidades.0.tipologia"><option value="apto" selected="">apto</option><option value="casa">casa</option><option value="studio">studio</option><option value="chale">chale</option><option value="outro">outro</option></select></label>
+          <label class="f">m²<input class="s" type="number" step="any" data-p="unidades.0.m2" value="45"></label>
+          <label class="f">Abre no mês<input class="s" type="number" step="1" data-p="unidades.0.abre_no_mes" value="1"></label>
+          <label class="f">ADR (BRL)<input type="number" step="any" data-p="unidades.0.adr_brl" value="350"></label>
+        </div>
+        <div class="flatbox">
+          <label class="f">Ocupação<input class="s" type="number" step="1" min="0" max="100" data-flat="0" placeholder="%" value="60"></label>
+          <div class="fh">Aplica o mesmo % aos 12 meses. Ajuste a sazonalidade abaixo só se precisar.</div>
+        </div>
+        <details class="mdet">
+          <summary>Sazonalidade mês a mês</summary>
+          <div class="mgrid">
+            <label>jan<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.0" value="60"></label>
+            <label>fev<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.1" value="60"></label>
+            <label>mar<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.2" value="60"></label>
+            <label>abr<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.3" value="60"></label>
+            <label>mai<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.4" value="60"></label>
+            <label>jun<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.5" value="60"></label>
+            <label>jul<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.6" value="60"></label>
+            <label>ago<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.7" value="60"></label>
+            <label>set<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.8" value="60"></label>
+            <label>out<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.9" value="60"></label>
+            <label>nov<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.10" value="60"></label>
+            <label>dez<input class="s pct" type="number" step="1" min="0" max="100" data-p="unidades.0.occupancy_mensal.11" value="60"></label>
+          </div>
+        </details>
+      </div>
+      </div>
+      <div class="toolbar" style="margin-top:var(--s4)"><button id="btnAddUnidade">+ unidade</button></div>
+      <p class="note">Ocupação em % por mês (jan–dez, repetido a cada ano). O campo <b>Ocupação</b> aplica o mesmo valor aos 12 meses; abra “Sazonalidade” só se algum mês for diferente. “Abre no mês” = primeiro mês com receita (1 = já opera no mês 1).</p>
+    </div>
+  </section>
+
+  <!-- SUPRIMENTOS -->
+  <section class="tab on" id="tab-suprimentos">
+    <div class="card">
+      <h2>Da diária cheia ao que sobra — por noite ocupada</h2>
+      <ol class="casc">
+        <li class="final"><span class="cl">Diária cobrada (ADR)</span><span class="bar"><i style="width:100%"></i></span><span class="cv">R$ 350,00</span></li>
+        <li class="cut"><span class="cl">− Suprimentos (limpeza, amenities, reposição)</span><span class="bar"><i style="width:18.9%"></i></span><span class="cv">− R$ 66,00</span></li>
+        <li class="step"><span class="cl">Líquida após suprimentos</span><span class="bar"><i style="width:81.1%"></i></span><span class="cv">R$ 284,00</span></li>
+        <li class="cut"><span class="cl">− Administradora (20% da diária)</span><span class="bar"><i style="width:20%"></i></span><span class="cv">− R$ 70,00</span></li>
+        <li class="cut"><span class="cl">− Plataforma (3% da receita bruta)</span><span class="bar"><i style="width:3%"></i></span><span class="cv">− R$ 10,50</span></li>
+        <li class="cut"><span class="cl">− Impostos (0% — a confirmar)</span><span class="bar"><i style="width:0%"></i></span><span class="cv">− R$ 0,00</span></li>
+        <li class="step final"><span class="cl">Líquida ao host, antes do OPEX fixo</span><span class="bar"><i style="width:58.1%"></i></span><span class="cv">R$ 203,50</span></li>
+        <li class="cut"><span class="cl">− OPEX fixo rateado (R$ 1.500 ÷ 18 noites)</span><span class="bar"><i style="width:23.8%"></i></span><span class="cv">− R$ 83,33</span></li>
+        <li class="step final"><span class="cl">Sobra por noite ocupada</span><span class="bar"><i style="width:34.3%"></i></span><span class="cv">R$ 120,17</span></li>
+      </ol>
+      <p class="note">Cada R$ 100 de diária deixa <b>R$ 34</b> no bolso com as premissas atuais. Com 18 noites/mês: R$ 2.157/mês, R$ 25.884/ano.</p>
+    </div>
+    <div class="card">
+      <h2>Itens de suprimento</h2>
+      <p class="note" style="margin-top:0">Cada item custa por <b>checkout</b> (turno de limpeza) ou por <b>noite ocupada</b> — assim escala com a ocupação. “mês” é só ajuste residual por unidade ativa e não pode passar de 20% do total.</p>
+      <div class="tw"><table id="tblSupr"><tbody><tr><th>Item</th><th>Custo unitário (BRL)</th><th>Por</th><th>Custo mês (ano 1 médio)</th><th></th></tr><tr><td><input class="w" type="text" step="any" data-p="suprimentos.0.nome" value="Limpeza por checkout"></td><td><input class="" type="number" step="any" data-p="suprimentos.0.custo_unitario" value="150"></td><td><select data-p="suprimentos.0.por"><option value="checkout" selected="">checkout</option><option value="noite_ocupada">noite_ocupada</option><option value="mes">mes</option></select></td><td class="suprMes" data-i="0">R$ 900</td><td><button data-del="suprimentos.0">×</button></td></tr><tr><td><input class="w" type="text" step="any" data-p="suprimentos.1.nome" value="Kit amenities"></td><td><input class="" type="number" step="any" data-p="suprimentos.1.custo_unitario" value="25"></td><td><select data-p="suprimentos.1.por"><option value="checkout" selected="">checkout</option><option value="noite_ocupada">noite_ocupada</option><option value="mes">mes</option></select></td><td class="suprMes" data-i="1">R$ 150</td><td><button data-del="suprimentos.1">×</button></td></tr><tr><td><input class="w" type="text" step="any" data-p="suprimentos.2.nome" value="Reposição por noite (papel, café…)"></td><td><input class="" type="number" step="any" data-p="suprimentos.2.custo_unitario" value="8"></td><td><select data-p="suprimentos.2.por"><option value="checkout">checkout</option><option value="noite_ocupada" selected="">noite_ocupada</option><option value="mes">mes</option></select></td><td class="suprMes" data-i="2">R$ 144</td><td><button data-del="suprimentos.2">×</button></td></tr></tbody></table></div>
+      <div class="toolbar" style="margin-top:var(--s3)"><button id="btnAddSupr">+ item</button></div>
+      <div id="suprResumo" style="margin-top:var(--s5)"><div class="kpis"><div class="kpi mini"><div class="l">Suprimentos ano 1</div><div class="v">R$ 14.328</div><div class="s">6 checkouts/mês · 18 noites/mês</div></div><div class="kpi mini"><div class="l">Por noite ocupada</div><div class="v">R$ 66</div><div class="s">19% da diária</div></div><div class="kpi mini"><div class="l">Diárias líquidas após suprimentos (ano 1)</div><div class="v">R$ 61.272</div><div class="s">R$ 75.600 − R$ 14.328</div></div></div></div>
+    </div>
+  </section>
+
+  <!-- RISCO -->
+  <section class="tab on" id="tab-risco">
+    <div class="card">
+      <h2>Cenários de ocupação</h2>
+      <p class="note" style="margin-top:0">Multiplicador aplicado sobre a occupancy informada em cada unidade.</p>
+      <div class="grid">
+        <label class="f">Conservador (×)<input type="number" step="0.05" data-k="risco.occupancy_cenarios.conservador" data-t="num" value="0.7"></label>
+        <label class="f">Base (×)<input type="number" step="0.05" data-k="risco.occupancy_cenarios.base" data-t="num" value="1"></label>
+        <label class="f">Otimista (×)<input type="number" step="0.05" data-k="risco.occupancy_cenarios.otimista" data-t="num" value="1.15"></label>
+        <label class="f">Reserva de caixa (meses de OPEX)<input type="number" step="1" data-k="risco.reserva_meses_opex" data-t="num" value="3"></label>
+      </div>
+      <p class="def">Defaults <b>0,7× / 1,0× / 1,15×</b>, reserva <b>3 meses</b>. Occupancy resultante é travada em 100%.</p>
+      <h3>Rollout por ano</h3>
+      <div class="tw"><table id="tblRollout"><tbody><tr><th>Ano</th><th>Occupancy ×</th><th>CAPEX extra (BRL)</th></tr><tr><td>1</td><td><input class="s" type="number" step="0.05" data-p="rollout.0.occupancy_mult" value="1"></td><td><input class="" type="number" step="any" data-p="rollout.0.capex_extra_brl" value="0"></td></tr><tr><td>2</td><td><input class="s" type="number" step="0.05" data-p="rollout.1.occupancy_mult" value="1"></td><td><input class="" type="number" step="any" data-p="rollout.1.capex_extra_brl" value="0"></td></tr><tr><td>3</td><td><input class="s" type="number" step="0.05" data-p="rollout.2.occupancy_mult" value="1"></td><td><input class="" type="number" step="any" data-p="rollout.2.capex_extra_brl" value="0"></td></tr><tr><td>4</td><td><input class="s" type="number" step="0.05" data-p="rollout.3.occupancy_mult" value="1"></td><td><input class="" type="number" step="any" data-p="rollout.3.capex_extra_brl" value="0"></td></tr><tr><td>5</td><td><input class="s" type="number" step="0.05" data-p="rollout.4.occupancy_mult" value="1"></td><td><input class="" type="number" step="any" data-p="rollout.4.capex_extra_brl" value="0"></td></tr></tbody></table></div>
+      <p class="note">CAPEX extra entra no mês 1 do ano. Use para obra atrasada (mult &lt; 1 no ano 1), rampa de reviews, ou nova unidade.</p>
+      <h3>O que quebra o projeto?</h3>
+      <label class="f">Nota de risco (vacância prolongada, obra atrasada, churn de reviews…)<input data-k="risco.nota" data-t="str" value=""></label>
+    </div>
+  </section>
+
+  <!-- FLUXO -->
+  <section class="tab on" id="tab-fluxo">
+    <div class="card">
+      <h2>Caixa acumulado — 5 anos <span class="pill" id="fluxoCenario">base</span></h2>
+      <div class="chartwrap">
+        <svg class="chart" id="chart" viewBox="0 0 1000 300" role="img" aria-label="Caixa acumulado ao longo de 5 anos: cai para R$ -602.500 no mês 0 e sobe até R$ -473.080 no fim do ano 5, sem cruzar a linha do zero.">
+        <text x="0" y="12" font-size="11" fill="var(--mut)">Caixa acumulado (R$)</text>
+        <line x1="64" x2="980" y1="41.4" y2="41.4" stroke="var(--line-3)" stroke-dasharray="2 5"></line><text x="56" y="44.9" text-anchor="end" font-size="11" fill="var(--mut)">0</text><line x1="64" x2="980" y1="106.2" y2="106.2" stroke="var(--line)"></line><text x="56" y="109.7" text-anchor="end" font-size="11" fill="var(--mut)">-200 mil</text><line x1="64" x2="980" y1="171" y2="171" stroke="var(--line)"></line><text x="56" y="174.5" text-anchor="end" font-size="11" fill="var(--mut)">-400 mil</text><line x1="64" x2="980" y1="235.8" y2="235.8" stroke="var(--line)"></line><text x="56" y="239.3" text-anchor="end" font-size="11" fill="var(--mut)">-600 mil</text><line x1="247.2" x2="247.2" y1="22" y2="252" stroke="var(--line)"></line><line x1="430.4" x2="430.4" y1="22" y2="252" stroke="var(--line)"></line><line x1="613.6" x2="613.6" y1="22" y2="252" stroke="var(--line)"></line><line x1="796.8" x2="796.8" y1="22" y2="252" stroke="var(--line)"></line><text x="155.6" y="268" text-anchor="middle" font-size="11" fill="var(--mut)">Ano 1</text><text x="338.8" y="268" text-anchor="middle" font-size="11" fill="var(--mut)">Ano 2</text><text x="522" y="268" text-anchor="middle" font-size="11" fill="var(--mut)">Ano 3</text><text x="705.2" y="268" text-anchor="middle" font-size="11" fill="var(--mut)">Ano 4</text><text x="888.4" y="268" text-anchor="middle" font-size="11" fill="var(--mut)">Ano 5</text>
+        <polygon points="64,41.4 64,236.6 980,194.7 980,41.4" fill="var(--bad-2)"></polygon>
+        <polyline points="64,41.4 64,236.6 980,194.7" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"></polyline>
+        <circle cx="64" cy="236.6" r="4" fill="var(--bad)"></circle>
+        <line x1="64" x2="64" y1="236.6" y2="252" stroke="var(--bad)" stroke-dasharray="3 3"></line>
+        <text x="72" y="61.4" font-size="12" font-weight="600" fill="var(--bad)">Mês 0 · caixa fica negativo · buraco R$ -602.500</text>
+        <line x1="980" x2="980" y1="22" y2="252" stroke="var(--line-3)"></line>
+        <text x="974" y="184.7" text-anchor="end" font-size="12" font-weight="600" fill="var(--ink-2)">Fim do ano 5 · R$ -473.080</text>
+        <text x="974" y="33.4" text-anchor="end" font-size="12" font-weight="600" fill="var(--bad)">Payback não ocorre no horizonte de 5 anos</text>
+      </svg>
+      </div>
+      <div class="chart-key">
+        <span><i></i> caixa acumulado</span>
+        <span><i class="z"></i> linha do zero</span>
+        <span><i class="n"></i> período com caixa negativo</span>
+      </div>
+      <p class="note">O buraco máximo é <b>R$ 602.500</b> no mês 0 e o caixa sobe R$ 2.157/mês. Para cruzar o zero nesse ritmo faltam <b>~23 anos</b> — ou uma premissa melhor: diária, ocupação ou comissão.</p>
+    </div>
+    <div class="card">
+      <h2>Mês a mês — ano 1</h2>
+      <label class="colswitch"><input type="checkbox" id="cbCols" checked=""> Mostrar só as colunas essenciais</label>
+      <div class="tw"><table id="tblMeses"><tbody><tr><th>Mês</th><th>Unid.</th><th>Noites</th><th>Checkouts</th><th>Receita diárias</th><th>Suprimentos</th><th>Diárias líq. após supr.</th><th>Tx. limpeza</th><th>Plataforma</th><th>Admin</th><th>Impostos</th><th>Caseiros</th><th>OPEX fixo</th><th>OPEX total</th><th>Resultado</th><th>CAPEX</th><th>Caixa</th></tr><tr class="mark"><td>0</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>602.500</td><td class="neg">-602.500</td></tr><tr><td class="">1</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-600.343</td></tr><tr><td class="">2</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-598.186</td></tr><tr><td class="">3</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-596.029</td></tr><tr><td class="">4</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-593.872</td></tr><tr><td class="">5</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-591.715</td></tr><tr><td class="">6</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-589.558</td></tr><tr><td class="">7</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-587.401</td></tr><tr><td class="">8</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-585.244</td></tr><tr><td class="">9</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-583.087</td></tr><tr><td class="">10</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-580.930</td></tr><tr><td class="">11</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-578.773</td></tr><tr><td class="">12</td><td class="">1</td><td class="">18</td><td class="">6</td><td class="">6.300</td><td class="">1.194</td><td class="">5.106</td><td class="">0</td><td class="">189</td><td class="">1.260</td><td class="">0</td><td class="">0</td><td class="">1.500</td><td class="">2.694</td><td class="">2.157</td><td class="">0</td><td class="neg">-576.616</td></tr><tr class="tot"><td>Ano 1</td><td>—</td><td>216</td><td>72</td><td>75.600</td><td>14.328</td><td>61.272</td><td>0</td><td>2.268</td><td>15.120</td><td>0</td><td>0</td><td>18.000</td><td>32.328</td><td class="">25.884</td><td>602.500</td><td class="neg">-576.616</td></tr></tbody></table></div>
+      <p class="tw-hint">Arraste a tabela para o lado para ver todas as colunas. Mês 0 = saldo inicial − CAPEX do mês 0. Linha marcada = primeiro mês com caixa negativo.</p>
+    </div>
+    <div class="card">
+      <h2>P&amp;L anual — anos 1 a <span id="hHoriz">5</span></h2>
+      <div class="tw"><table id="tblAnos"><tbody><tr><th>Ano</th><th>Occ. ×</th><th>Noites</th><th>Receita bruta</th><th>Suprimentos</th><th>Plataforma</th><th>Admin</th><th>Impostos</th><th>Caseiros</th><th>OPEX fixo</th><th>OPEX total</th><th>Resultado</th><th>ROI</th><th>CAPEX</th><th>Caixa fim</th></tr><tr><td class="">1</td><td class="">1</td><td class="">216</td><td class="">75.600</td><td class="">14.328</td><td class="">2.268</td><td class="">15.120</td><td class="">0</td><td class="">0</td><td class="">18.000</td><td class="">32.328</td><td class="">25.884</td><td class="">4,3%</td><td class="">602.500</td><td class="neg">-576.616</td></tr><tr><td class="">2</td><td class="">1</td><td class="">216</td><td class="">75.600</td><td class="">14.328</td><td class="">2.268</td><td class="">15.120</td><td class="">0</td><td class="">0</td><td class="">18.000</td><td class="">32.328</td><td class="">25.884</td><td class="">4,3%</td><td class="">0</td><td class="neg">-550.732</td></tr><tr><td class="">3</td><td class="">1</td><td class="">216</td><td class="">75.600</td><td class="">14.328</td><td class="">2.268</td><td class="">15.120</td><td class="">0</td><td class="">0</td><td class="">18.000</td><td class="">32.328</td><td class="">25.884</td><td class="">4,3%</td><td class="">0</td><td class="neg">-524.848</td></tr><tr><td class="">4</td><td class="">1</td><td class="">216</td><td class="">75.600</td><td class="">14.328</td><td class="">2.268</td><td class="">15.120</td><td class="">0</td><td class="">0</td><td class="">18.000</td><td class="">32.328</td><td class="">25.884</td><td class="">4,3%</td><td class="">0</td><td class="neg">-498.964</td></tr><tr><td class="">5</td><td class="">1</td><td class="">216</td><td class="">75.600</td><td class="">14.328</td><td class="">2.268</td><td class="">15.120</td><td class="">0</td><td class="">0</td><td class="">18.000</td><td class="">32.328</td><td class="">25.884</td><td class="">4,3%</td><td class="">0</td><td class="neg">-473.080</td></tr></tbody></table></div>
+      <p class="p-only p-foot">airbnb-calc.v1 · estimativa gerada no navegador a partir de premissas editáveis. ITBI, cartório, encargos CLT e impostos são defaults, não alíquotas oficiais. Confirme com contador, cartório e orçamento de obra.</p>
+    </div>
+  </section>
+
+  <!-- FÓRMULAS -->
+  <section class="tab on" id="tab-formulas">
+    <div class="card">
+      <h2>Fórmulas (auditáveis)</h2>
+<pre class="formulas">noites_ocupadas_mes_u   = noites_mes × min(1, occupancy_mes_u × cenário × rollout_ano)     [0 antes de abre_no_mes; 0 se tipo = terreno]
+receita_diarias_mes     = Σ_u ADR_u × noites_ocupadas_mes_u
+checkouts_mes           = noites_ocupadas_mes ÷ estada_media
+receita_limpeza_mes     = taxa_limpeza_hospede × checkouts_mes            (só se fica com o host)
+receita_bruta_mes       = receita_diarias + receita_limpeza
+suprimentos_mes         = Σ item[checkout] × checkouts + Σ item[noite_ocupada] × noites + Σ item[mes] × unidades_ativas
+                          (se suprimentos_na_admin: calculado para exibição, mas não abatido)
+diarias_liq_apos_supr   = receita_diarias − suprimentos_mes
+taxa_plataforma         = plataforma_pct × receita_bruta
+taxa_admin              = admin_pct × receita_diarias                      (modelos administradora e híbrido)
+impostos                = impostos_pct × receita_bruta
+receita_liquida_ops     = receita_bruta − suprimentos − plataforma − admin − impostos
+n_caseiros              = ativo ? ⌈unidades_ativas ÷ casas_por_caseiro⌉ : 0
+base_bonus              = receita_diarias | receita_diarias − plataforma | receita_diarias − plataforma − admin   (conforme bonus_base)
+custo_caseiros_mes      = n_caseiros × salário × encargos_mult + bonus_pct × base_bonus   (0 se n_caseiros = 0)
+opex_fixo_mes           = unidades_ativas × (condomínio + utilidades + seguro) + IPTU ÷ 12 + outros
+opex_total_mes          = opex_fixo + caseiros + suprimentos (se não na admin)
+resultado_mes           = receita_bruta − plataforma − admin − impostos − opex_total
+capex_total             = Σ capex[].valor_brl        (cada linha no mês inicial, espalhada por "meses")
+caixa_0                 = saldo_inicial − capex(mês 0);   caixa_m = caixa_{m−1} + resultado_m − capex_m
+payback                 = primeiro mês em que Σ resultado − Σ capex ≥ 0        (independe do saldo inicial)
+ROI ano n               = resultado_n ÷ capex_total
+occupancy de equilíbrio = menor occupancy flat (todas as unidades, 12 meses, cenário base) com resultado_ano1 ≥ 0
+reserva sugerida        = reserva_meses × (opex_total_ano1 ÷ 12)
+</pre>
+    </div>
+    <div class="card">
+      <h2>O que este app não é</h2>
+      <p class="note" style="margin-top:0">Não é PMS nem channel manager: não sincroniza com Airbnb, não gerencia reservas. Não é contabilidade fiscal: ITBI, cartório, encargos CLT e impostos são defaults editáveis e rotulados, não alíquotas oficiais. Não substitui cartório, contador ou orçamento de obra. Um operador, sem login, sem servidor.</p>
+    </div>
+  </section>
+
+  <!-- JSON -->
+  <section class="tab on" id="tab-json">
+    <div class="card">
+      <h2>Estado (airbnb-calc.v1)</h2>
+      <p class="note" style="margin-top:0">Cole um JSON e clique “Carregar do texto” para importar sem arquivo. O estado também fica salvo em localStorage.</p>
+      <textarea id="jsonArea" spellcheck="false">{
+  "schema": "airbnb-calc.v1",
+  "projeto": {
+    "nome": "Meu Airbnb",
+    "cidade": "São Paulo",
+    "uf": "SP",
+    "tipo": "apartamento",
+    "objetivo": "yield",
+    "moeda": "BRL",
+    "horizonte_anos": 5
+  },
+  "unidades": [
+    {
+      "id": "u1",
+      "nome": "Unidade 1",
+      "tipologia": "apto",
+      "m2": 45,
+      "abre_no_mes": 1,
+      "adr_brl": 350,
+      "occupancy_mensal": [
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.6
+      ]
+    }
+  ],
+  "capex": [
+    {
+      "id": "compra",
+      "categoria": "aquisicao",
+      "descricao": "Preço de compra",
+      "valor_brl": 500000,
+      "mes_inicio": 0,
+      "meses": 1
+    },
+    {
+      "id": "itbi",
+      "categoria": "cartorio",
+      "descricao": "ITBI (3% default)",
+      "valor_brl": 15000,
+      "mes_inicio": 0,
+      "meses": 1
+    },
+    {
+      "id": "cartorio",
+      "categoria": "cartorio",
+      "descricao": "Escritura + registro + certidões (1,5% default)",
+      "valor_brl": 7500,
+      "mes_inicio": 0,
+      "meses": 1
+    },
+    {
+      "id": "obra",
+      "categoria": "obra",
+      "descricao": "Reforma / fit-out",
+      "valor_brl": 40000,
+      "mes_inicio": 0,
+      "meses": 1
+    },
+    {
+      "id": "decor",
+      "categoria": "mobiliario",
+      "descricao": "Decoração + mobiliário",
+      "valor_brl": 25000,
+      "mes_inicio": 0,
+      "meses": 1
+    },
+    {
+      "id": "equip",
+      "categoria": "equipamentos",
+      "descricao": "Equipamentos (A/C, TV, enxoval, fechadura)",
+      "valor_brl": 15000,
+      "mes_inicio": 0,
+      "meses": 1
+    }
+  ],
+  "aquisicao_pct": {
+    "itbi_pct": 0.03,
+    "cartorio_pct": 0.015
+  },
+  "obra": {
+    "area_terreno_m2": 1000,
+    "preco_terreno_brl": 400000,
+    "n_casas": 4,
+    "m2_por_casa": 60,
+    "padrao": "medio",
+    "custo_m2_brl": 3500,
+    "prazo_meses": 12,
+    "contingencia_pct": 0.1,
+    "projeto_taxas_brl": 40000,
+    "decor_por_casa_brl": 25000,
+    "equip_por_casa_brl": 15000
+  },
+  "operacao": {
+    "modelo": "administradora",
+    "admin_pct": 0.2,
+    "plataforma_pct": 0.03,
+    "impostos_pct": 0,
+    "condominio_mes_brl": 800,
+    "iptu_ano_brl": 2400,
+    "utilidades_mes_brl": 400,
+    "seguro_mes_brl": 100,
+    "outros_mes_brl": 0,
+    "suprimentos_na_admin": false,
+    "noites_mes": 30,
+    "estada_media": 3,
+    "taxa_limpeza_hospede_brl": 0,
+    "limpeza_fica_com_host": true,
+    "saldo_inicial_brl": 0
+  },
+  "caseiros": {
+    "ativo": false,
+    "salario_bruto_mes": 2500,
+    "encargos_mult": 1.8,
+    "casas_por_caseiro": 5,
+    "bonus_pct": 0.05,
+    "bonus_base": "liquida_pos_admin"
+  },
+  "suprimentos": [
+    {
+      "id": "limpeza",
+      "nome": "Limpeza por checkout",
+      "custo_unitario": 150,
+      "por": "checkout"
+    },
+    {
+      "id": "amenities",
+      "nome": "Kit amenities",
+      "custo_unitario": 25,
+      "por": "checkout"
+    },
+    {
+      "id": "reposicao",
+      "nome": "Reposição por noite (papel, café…)",
+      "custo_unitario": 8,
+      "por": "noite_ocupada"
+    }
+  ],
+  "rollout": [
+    {
+      "ano": 1,
+      "occupancy_mult": 1,
+      "capex_extra_brl": 0
+    },
+    {
+      "ano": 2,
+      "occupancy_mult": 1,
+      "capex_extra_brl": 0
+    },
+    {
+      "ano": 3,
+      "occupancy_mult": 1,
+      "capex_extra_brl": 0
+    },
+    {
+      "ano": 4,
+      "occupancy_mult": 1,
+      "capex_extra_brl": 0
+    },
+    {
+      "ano": 5,
+      "occupancy_mult": 1,
+      "capex_extra_brl": 0
+    }
+  ],
+  "risco": {
+    "occupancy_cenarios": {
+      "conservador": 0.7,
+      "base": 1,
+      "otimista": 1.15
+    },
+    "reserva_meses_opex": 3,
+    "nota": ""
+  }
+}</textarea>
+      <div class="toolbar" style="margin-top:var(--s3)"><button id="btnLoadText" class="primary">Carregar do texto</button><button id="btnRefreshText">Atualizar texto com o estado atual</button><span id="jsonMsg" class="note" style="margin:0">Importado.</span></div>
+    </div>
+  </section>
+</main>
+<script>
+(function(){
+  var K='airbnb-calc.theme', r=document.documentElement,
+      b=document.getElementById('btnTheme'), l=document.getElementById('themeLabel');
+  function sysDark(){return window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches}
+  function isDark(){var t=r.getAttribute('data-theme');return t?t==='dark':sysDark()}
+  function paint(){var d=isDark();if(l)l.textContent=d?'Claro':'Escuro';
+    b.setAttribute('aria-pressed',d?'true':'false')}
+  try{var s=localStorage.getItem(K); if(s)r.setAttribute('data-theme',s);}catch(e){}
+  paint();
+  b.addEventListener('click',function(){
+    var next=isDark()?'light':'dark';
+    r.setAttribute('data-theme',next);
+    try{localStorage.setItem(K,next)}catch(e){}
+    paint();
+  });
+})();
+</script>
+</body></html>

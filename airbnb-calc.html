@@ -1,0 +1,1303 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Airbnb Calc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS — Caldera (forge fire on warm limestone)
+   Copie este bloco para o app real.
+   ============================================================ */
+:root{
+  /* paleta Caldera */
+  --color-ember:#fc5000;
+  --color-plasma:#524ae9;
+  --color-sulfur:#f5f28e;
+  --color-limestone:#f7f6f2;
+  --color-pumice:#e2e2df;
+  --color-obsidian:#070607;
+  --color-chalk:#ffffff;
+
+  /* superfícies e tinta (semânticas) */
+  --bg:var(--color-pumice);
+  --paper:var(--color-limestone);
+  --paper-2:#efeeea;
+  --paper-3:#e7e6e1;
+  --ink:var(--color-obsidian);
+  --ink-2:#3d3b39;
+  --mut:#6f6c68;
+  --on-dark:var(--color-chalk);
+  --bar:var(--color-obsidian);
+
+  /* traços — o pontilhado é assinatura do sistema */
+  --line:rgba(7,6,7,.14);
+  --line-2:rgba(7,6,7,.24);
+  --line-3:rgba(7,6,7,.42);
+  --dot:1.5px dotted rgba(7,6,7,.34);
+
+  /* semântica de estado, dentro da paleta */
+  --acc:var(--color-ember);        /* ação primária + urgência */
+  --acc-ink:var(--color-obsidian); /* texto sobre Ember */
+  --acc-wash:rgba(252,80,0,.12);
+  --bad:var(--color-ember);
+  --bad-2:rgba(252,80,0,.13);
+  --bad-3:rgba(252,80,0,.45);
+  --warn:var(--color-obsidian);
+  --warn-2:var(--color-sulfur);
+  --warn-3:rgba(7,6,7,.28);
+  --pos:var(--color-obsidian);
+
+  /* cores de dado (categorias / gráficos) */
+  --cat-aquisicao:var(--color-obsidian);
+  --cat-cartorio:var(--color-ember);
+  --cat-obra:var(--color-plasma);
+  --cat-mobiliario:var(--color-sulfur);
+  --cat-equip:#a8a5a0;
+
+  /* espaçamento (escala Caldera) */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:40px; --s7:64px;
+  --pad-card:clamp(18px,3.2vw,40px);
+  --gutter:clamp(12px,3vw,40px);
+  --page:1280px;
+
+  /* raio */
+  --r-small:16px; --r-medium:20px; --r-card:20px;
+  --r-input:100px; --r-pill:800px; --r1:100px; --r2:100px; --r3:var(--r-card);
+
+  /* tipografia */
+  --f-display:"Anton","PP Neue Corp Compact","Bebas Neue","Arial Narrow",Impact,sans-serif;
+  --f-ui:"DM Sans",Inter,Manrope,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-num:var(--f-display);
+  --f-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --t-3xl:clamp(38px,6.4vw,72px);
+  --t-2xl:clamp(30px,4vw,44px);
+  --t-xl:clamp(24px,2.6vw,32px);
+  --t-l:clamp(20px,2.1vw,26px);
+  --t-m:15px; --t-s:13px; --t-xs:11.5px;
+  --lh-tight:.94; --lh:1.5; --track:.06em; --track-d:.02em;
+  /* aliases legados */
+  --card:var(--paper); --acc2:var(--acc-wash); --bad2:var(--bad-2); --warn2:var(--warn-2); --mono:var(--f-mono);
+  --acc-3:#c93f00; --t-2xl-legacy:0;
+}
+:root[data-theme="dark"]{
+  --bg:#0d0c0c; --paper:#161514; --paper-2:#1d1b1a; --paper-3:#242120;
+  --ink:#f4f2ee; --ink-2:#cfcbc4; --mut:#95908a; --bar:#000;
+  --line:rgba(244,242,238,.14); --line-2:rgba(244,242,238,.22); --line-3:rgba(244,242,238,.4);
+  --dot:1.5px dotted rgba(244,242,238,.32);
+  --warn:var(--color-obsidian); --warn-2:var(--color-sulfur);
+  --cat-aquisicao:#f4f2ee; --cat-equip:#6b6864;
+  --pos:#f4f2ee;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d0c0c; --paper:#161514; --paper-2:#1d1b1a; --paper-3:#242120;
+    --ink:#f4f2ee; --ink-2:#cfcbc4; --mut:#95908a; --bar:#000;
+    --line:rgba(244,242,238,.14); --line-2:rgba(244,242,238,.22); --line-3:rgba(244,242,238,.4);
+    --dot:1.5px dotted rgba(244,242,238,.32);
+    --cat-aquisicao:#f4f2ee; --cat-equip:#6b6864; --pos:#f4f2ee;
+  }
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:500 var(--t-m)/var(--lh) var(--f-ui);font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;letter-spacing:var(--track-d);
+  line-height:1;text-transform:none}
+a{color:var(--ink);text-decoration-thickness:1.5px;text-underline-offset:3px}
+a:hover{color:var(--acc)}
+
+/* ---------- barra de navegação (dark, divisores pontilhados) ---------- */
+.topbar{background:var(--bar);color:var(--on-dark);display:flex;align-items:stretch;
+  gap:0;min-height:58px;position:relative}
+.brand{display:flex;align-items:center;gap:10px;padding:0 clamp(12px,2.4vw,28px);
+  color:var(--on-dark);text-decoration:none;flex:0 0 auto}
+.brand .mark{width:26px;height:26px;flex:0 0 auto;display:grid;place-items:center;color:var(--acc)}
+.brand .mark svg{display:block;width:26px;height:26px}
+.brand .wm{font-family:var(--f-display);font-size:22px;letter-spacing:var(--track-d);
+  white-space:nowrap;text-transform:lowercase}
+.topbar .tabs{flex:1 1 0%;min-width:0;display:flex;align-items:stretch;overflow-x:auto;
+  overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  border-left:var(--dot);border-color:rgba(255,255,255,.34);
+  mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 28px),transparent 100%);
+  -webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 28px),transparent 100%)}
+.topbar .tabs::-webkit-scrollbar{display:none}
+.tabs button{border:0;background:none;border-radius:0;color:rgba(255,255,255,.72);
+  padding:0 clamp(12px,1.6vw,20px);white-space:nowrap;font:500 var(--t-s)/1 var(--f-ui);
+  border-right:var(--dot);border-color:rgba(255,255,255,.34);cursor:pointer}
+.tabs button:hover{color:#fff;background:rgba(255,255,255,.06)}
+.tabs button{position:relative}
+.tabs button.on{color:var(--acc)}
+.tabs button.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--acc)}
+.themebtn{flex:0 0 auto;background:none;border:0;border-left:var(--dot);
+  border-color:rgba(255,255,255,.34);border-radius:0;color:rgba(255,255,255,.8);
+  padding:0 clamp(14px,2vw,22px);font:500 var(--t-s)/1 var(--f-ui);cursor:pointer;
+  display:flex;align-items:center;gap:8px}
+.themebtn:hover{color:#fff;background:rgba(255,255,255,.06)}
+.themebtn svg{width:16px;height:16px;display:block}
+
+/* ---------- cabeçalho do projeto ---------- */
+header{background:var(--bg);padding:var(--s5) var(--gutter) var(--s3);
+  display:flex;flex-wrap:wrap;gap:var(--s3) var(--s4);align-items:center;
+  width:min(var(--page),100%);margin:0 auto}
+header h1{font-size:var(--t-2xl);margin:0}
+header .sub{color:var(--mut);font-size:var(--t-s);display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap}
+header .meta{flex:1 1 100%;color:var(--mut);font:400 var(--t-xs)/1.3 var(--f-ui)}
+.pill{display:inline-block;padding:4px 12px;border-radius:var(--r-pill);
+  background:var(--warn-2);color:var(--color-obsidian);font-size:var(--t-xs);font-weight:500;
+  letter-spacing:var(--track);text-transform:uppercase}
+main{width:min(var(--page),100%);margin:0 auto;padding:0 var(--gutter) 80px}
+
+/* ---------- controles: tudo pílula, nada retangular ---------- */
+button{background:var(--paper);border:1.5px solid var(--line-2);border-radius:var(--r-pill);
+  padding:9px 18px;font:500 var(--t-s)/1.2 var(--f-ui);cursor:pointer;color:var(--ink);
+  white-space:nowrap}
+button:hover{border-color:var(--ink);color:var(--ink)}
+button.primary{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+button.primary:hover{background:var(--acc);border-color:var(--ink);color:var(--acc-ink)}
+button.danger{color:var(--acc);border-color:var(--bad-3)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{
+  outline:2px solid var(--acc);outline-offset:2px}
+.toolbar{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+.toolbar .spacer{flex:1}
+.seg{display:inline-flex;background:var(--paper);border:1.5px solid var(--line-2);
+  border-radius:var(--r-pill);padding:3px;gap:3px}
+.seg button{border:0;background:none;border-radius:var(--r-pill);padding:7px 16px;
+  color:var(--mut);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:var(--track)}
+.seg button.on{background:var(--acc);color:var(--acc-ink)}
+
+/* ---------- alertas ---------- */
+#alerts{display:flex;flex-wrap:wrap;gap:var(--s2);margin:0 0 var(--s4);align-items:center}
+#alerts:empty{display:none}
+.alert{font-size:var(--t-s)}
+.alert.erro{flex:1 1 100%;display:flex;gap:var(--s3);align-items:baseline;
+  background:#000000;color:var(--on-dark);border:0;
+  border-left:8px solid var(--acc);padding:14px var(--s5);border-radius:10px;
+  font-size:var(--t-m);font-weight:500}
+.alert.erro>span:first-child{font-family:var(--f-display);font-size:20px;color:var(--acc);
+  text-transform:uppercase;letter-spacing:var(--track-d)}
+.alert.aviso{flex:0 1 auto;background:var(--warn-2);border:0;color:var(--color-obsidian);
+  padding:5px 14px;border-radius:var(--r-pill);font-size:var(--t-xs);font-weight:500}
+
+/* ---------- veredito ---------- */
+.verdict{background:var(--paper);border-radius:var(--r-card);
+  padding:var(--pad-card);margin-bottom:var(--s4)}
+.verdict-top{display:flex;flex-wrap:wrap;gap:var(--s3);align-items:center;
+  padding-bottom:var(--s4);border-bottom:var(--dot)}
+.eyebrow{font-size:var(--t-xs);text-transform:uppercase;letter-spacing:var(--track);
+  color:var(--mut);font-weight:500}
+.verdict-top .eyebrow{margin-right:auto}
+.verdict-line{display:flex;gap:var(--s3);align-items:flex-start;margin:var(--s5) 0 var(--s6);
+  font-size:clamp(16px,1.6vw,20px);line-height:1.4;color:var(--ink);max-width:70ch;text-wrap:pretty}
+.verdict-line::before{content:"";flex:0 0 auto;width:12px;height:12px;border-radius:50%;
+  background:var(--acc);margin-top:7px}
+.verdict-line.ok::before{background:var(--pos)}
+.verdict-line b{font-weight:500;background:var(--warn-2);color:var(--color-obsidian);
+  padding:0 5px;border-radius:4px;box-decoration-break:clone}
+
+.kpis{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--s5) var(--s5)}
+.kpi{min-width:0}
+.kpi .l{color:var(--mut);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:var(--track);font-weight:500}
+.kpi .v{font-family:var(--f-display);font-size:var(--t-xl);line-height:var(--lh-tight);
+  margin-top:8px;letter-spacing:var(--track-d)}
+.kpi .s{color:var(--mut);font-size:var(--t-xs);margin-top:8px;line-height:1.35;text-wrap:pretty}
+.kpi .v.neg{color:var(--acc)}
+/* heróis */
+.kpis>.kpi:nth-child(5),.kpis>.kpi:nth-child(6),.kpis>.kpi:nth-child(7),.kpi.hero{
+  order:-1;grid-column:span 4;padding-left:var(--s5);border-left:var(--dot)}
+.kpis>.kpi:nth-child(5),.kpi.hero:first-child{padding-left:0;border-left:0}
+.kpis>.kpi:nth-child(5) .v,.kpis>.kpi:nth-child(6) .v,.kpis>.kpi:nth-child(7) .v,.kpi.hero .v{
+  font-size:48px}
+.kpis>.kpi:nth-child(5) .l,.kpis>.kpi:nth-child(6) .l,.kpis>.kpi:nth-child(7) .l,.kpi.hero .l{color:var(--ink-2)}
+/* contexto */
+.kpis>.kpi:nth-child(-n+4),.kpi.ctx{order:0;grid-column:span 3;border-top:var(--dot);padding-top:var(--s4)}
+.kpis>.kpi:nth-child(-n+4) .v,.kpi.ctx .v{font-size:var(--t-l)}
+/* secundários */
+.kpis>.kpi:nth-child(n+8),.kpi.mini{order:1;grid-column:span 6;display:flex;gap:var(--s2);
+  align-items:baseline;flex-wrap:wrap;color:var(--mut)}
+.kpis>.kpi:nth-child(n+8) .v,.kpi.mini .v{font-family:var(--f-ui);font-size:var(--t-m);
+  font-weight:500;color:var(--ink);margin:0}
+.kpis>.kpi:nth-child(n+8) .l,.kpi.mini .l{text-transform:none;letter-spacing:0;font-weight:500}
+.kpis>.kpi:nth-child(n+8) .s,.kpi.mini .s{margin:0}
+section.tab{display:none}
+section.tab.on{display:block}
+
+/* ---------- cartões e formulários ---------- */
+.card{background:var(--paper);border-radius:var(--r-card);padding:var(--pad-card);margin-bottom:var(--s4)}
+.card h2{font-size:var(--t-l);margin:0 0 var(--s5);max-width:32ch}
+.card h3{font-size:var(--t-xs);margin:var(--s6) 0 var(--s3);color:var(--mut);
+  text-transform:uppercase;letter-spacing:var(--track);font-family:var(--f-ui);font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:var(--s4)}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:var(--t-xs);color:var(--mut);
+  text-transform:uppercase;letter-spacing:var(--track);font-weight:500}
+label.f input,label.f select{font:500 var(--t-m)/1.2 var(--f-ui);color:var(--ink);padding:10px 16px;
+  border:1.5px solid var(--line-2);border-radius:var(--r-input);background:transparent;width:100%;min-width:0}
+label.f input:hover,label.f select:hover{border-color:var(--ink)}
+label.f input[type=checkbox]{width:auto}
+label.chk{display:flex;align-items:flex-start;gap:var(--s3);font-size:var(--t-s);color:var(--ink-2);
+  padding:var(--s3) 0;line-height:1.4}
+label.chk input{margin-top:3px;flex:0 0 auto;accent-color:var(--acc);width:16px;height:16px}
+.note{color:var(--mut);font-size:var(--t-s);margin:var(--s4) 0 0;max-width:78ch;text-wrap:pretty}
+.def{font-size:var(--t-s);color:var(--ink-2);margin:var(--s4) 0 0;padding:var(--s4) 0 0;
+  border-top:var(--dot);max-width:88ch;text-wrap:pretty}
+.def::before{content:"Premissa editável — ";text-transform:uppercase;letter-spacing:var(--track);
+  font-size:var(--t-xs);font-weight:500;color:var(--acc)}
+.def b{color:var(--color-obsidian);font-weight:500;background:var(--warn-2);padding:0 4px;border-radius:3px}
+
+/* ---------- tabelas ---------- */
+.tw{overflow-x:auto;
+  background:linear-gradient(to right,var(--paper) 30%,rgba(0,0,0,0)),
+    linear-gradient(to left,var(--paper) 30%,rgba(0,0,0,0)) 100% 0,
+    radial-gradient(farthest-side at 0 50%,var(--line),rgba(0,0,0,0)),
+    radial-gradient(farthest-side at 100% 50%,var(--line),rgba(0,0,0,0)) 100% 0;
+  background-repeat:no-repeat;background-size:44px 100%,44px 100%,14px 100%,14px 100%;
+  background-attachment:local,local,scroll,scroll}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:var(--t-s)}
+th,td{padding:9px var(--s3);border-bottom:var(--dot);text-align:right;white-space:nowrap}
+th{font-weight:500;color:var(--mut);font-size:var(--t-xs);text-transform:uppercase;
+  letter-spacing:var(--track);background:var(--paper);border-bottom:1.5px solid var(--line-3);
+  position:sticky;top:0}
+th:first-child,td:first-child{text-align:left}
+tbody tr:hover td{background:var(--paper-2)}
+td input,td select{font:500 var(--t-s)/1.2 var(--f-ui);padding:6px 12px;border:1.5px solid var(--line-2);
+  border-radius:var(--r-input);width:118px;text-align:right;background:transparent;color:var(--ink)}
+td input:hover,td select:hover{border-color:var(--ink)}
+td input.w{width:200px;text-align:left}
+td input.s{width:74px}
+td select{text-align:left;width:auto}
+tr.tot td{font-weight:500;border-top:1.5px solid var(--ink);border-bottom:0;
+  background:var(--paper-2);color:var(--ink)}
+td.neg{color:var(--acc)}
+td.mark,tr.mark td{background:var(--bad-2)}
+tr.mark td:first-child{box-shadow:inset 4px 0 0 var(--acc)}
+.hide{display:none!important}
+#tblMeses th:first-child,#tblMeses td:first-child{position:sticky;left:0;background:var(--paper);z-index:1}
+#tblMeses th:first-child{z-index:2}
+#tblMeses tr.tot td:first-child{background:var(--paper-2)}
+.colswitch{display:inline-flex;gap:var(--s2);align-items:center;font-size:var(--t-s);
+  color:var(--ink-2);margin:0 0 var(--s4);cursor:pointer}
+.colswitch input{accent-color:var(--acc);width:16px;height:16px}
+body:has(#cbCols:checked) #tblMeses :is(th,td):is(:nth-child(2),:nth-child(3),:nth-child(4),
+  :nth-child(6),:nth-child(7),:nth-child(8),:nth-child(9),:nth-child(10),:nth-child(11),
+  :nth-child(12),:nth-child(13)){display:none}
+.tw-hint{font-size:var(--t-xs);color:var(--mut);margin:var(--s3) 0 0}
+
+/* ---------- barra empilhada (CAPEX) ---------- */
+.stack{display:flex;height:44px;border-radius:var(--r-pill);overflow:hidden}
+.stack span{display:block;min-width:3px}
+.legend{list-style:none;margin:var(--s5) 0 0;padding:0;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:var(--s3) var(--s5)}
+.legend li{display:flex;gap:var(--s2);align-items:center;font-size:var(--t-s);color:var(--ink-2);
+  white-space:nowrap;padding-bottom:var(--s2);border-bottom:var(--dot)}
+.legend i{flex:0 0 auto;width:12px;height:12px;border-radius:50%}
+.legend b{margin-left:auto;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink)}
+.legend em{color:var(--mut);font-style:normal;font-size:var(--t-xs);width:5ch;text-align:right}
+.callout{display:flex;flex-wrap:wrap;gap:var(--s3) var(--s5);align-items:center;
+  margin:var(--s5) 0 0;padding:var(--pad-card);background:var(--acc);color:var(--acc-ink);
+  border-radius:10px}
+.callout .eyebrow{color:var(--acc-ink);opacity:.7}
+.callout .cv{font-family:var(--f-display);font-size:var(--t-2xl);line-height:.9;color:var(--acc-ink)}
+.callout .cl{font-size:var(--t-s);color:var(--acc-ink);max-width:52ch;text-wrap:pretty;flex:1 1 260px}
+.callout .cl b{font-weight:500;text-decoration:underline;text-decoration-thickness:2px}
+
+/* ---------- cascata (suprimentos) ---------- */
+.casc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.casc li{display:grid;grid-template-columns:minmax(160px,1.1fr) minmax(0,3fr) 116px;
+  gap:var(--s4);align-items:center;font-size:var(--t-s);padding:var(--s2) 0}
+.casc .cl{color:var(--ink-2)}
+.casc .bar{height:26px;position:relative;background:var(--paper-2);border-radius:var(--r-pill)}
+.casc .bar i{position:absolute;inset:0 auto 0 0;border-radius:var(--r-pill);background:var(--ink)}
+.casc .cv{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.casc li.cut .cl,.casc li.cut .cv{color:var(--acc)}
+.casc li.cut .bar{background:transparent}
+.casc li.cut .bar i{left:auto;right:0;background:repeating-linear-gradient(135deg,
+  var(--acc) 0 4px,var(--acc-wash) 4px 9px)}
+.casc li.step{border-top:var(--dot);padding-top:var(--s3)}
+.casc li.final .cl{color:var(--ink);font-weight:500}
+.casc li.final .cv{font-family:var(--f-display);font-size:var(--t-l);color:var(--ink)}
+.casc li.final .bar i{background:var(--ink)}
+
+/* ---------- unidades como cards ---------- */
+.units{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:var(--s4)}
+.unit{border:1.5px solid var(--line-2);border-radius:var(--r-card);background:transparent;padding:var(--pad-card)}
+.unit-top{display:flex;gap:var(--s3);align-items:center;margin-bottom:var(--s4)}
+.unit-top input.w{flex:1;font:400 var(--t-l)/1 var(--f-display);letter-spacing:var(--track-d);
+  padding:6px 12px;border:1.5px solid transparent;background:transparent;border-radius:var(--r-input);
+  width:auto;text-align:left;color:var(--ink)}
+.unit-top input.w:hover,.unit-top input.w:focus{border-color:var(--line-2)}
+.unit-top button{width:38px;height:38px;padding:0;flex:0 0 auto;line-height:1}
+.unit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,104px),1fr));gap:var(--s3)}
+.unit-grid input,.unit-grid select{width:100%!important;text-align:left}
+.flatbox{display:flex;flex-wrap:wrap;gap:var(--s4);align-items:flex-end;margin-top:var(--s5);
+  padding-top:var(--s4);border-top:var(--dot)}
+.flatbox label.f{flex:0 0 132px}
+.flatbox label.f input{width:100%;font:400 var(--t-xl)/1 var(--f-display);text-align:left;padding:8px 18px}
+.flatbox .fh{flex:1 1 180px;font-size:var(--t-xs);color:var(--mut);padding-bottom:8px;text-wrap:pretty}
+details.mdet{margin-top:var(--s4);border-top:var(--dot);padding-top:var(--s3)}
+details.mdet>summary{cursor:pointer;font-size:var(--t-xs);color:var(--mut);font-weight:500;
+  text-transform:uppercase;letter-spacing:var(--track);list-style:none;display:flex;gap:var(--s2);align-items:center}
+details.mdet>summary::-webkit-details-marker{display:none}
+details.mdet>summary::before{content:"›";display:inline-block;transition:transform .12s;font-size:15px;color:var(--acc)}
+details.mdet[open]>summary::before{transform:rotate(90deg)}
+.mgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--s2);margin-top:var(--s4)}
+.mgrid label{display:flex;flex-direction:column;gap:4px;font-size:var(--t-xs);color:var(--mut);text-align:center}
+.mgrid input{width:100%;font:500 var(--t-s)/1.2 var(--f-ui);text-align:center;padding:7px 2px;
+  border:1.5px solid var(--line-2);border-radius:var(--r-input);background:transparent;color:var(--ink)}
+.mgrid input:hover{border-color:var(--ink)}
+
+/* ---------- gráfico ---------- */
+.chartwrap{border-radius:var(--r-card);background:var(--paper-2);padding:var(--s4);overflow:hidden}
+svg.chart{display:block;width:100%;height:auto}
+.chart-key{display:flex;flex-wrap:wrap;gap:var(--s3) var(--s5);margin:var(--s4) 0 0;
+  font-size:var(--t-xs);color:var(--mut)}
+.chart-key span{display:flex;gap:8px;align-items:center}
+.chart-key i{width:16px;height:2.5px;background:var(--ink);display:block}
+.chart-key i.z{height:0;border-top:1.5px dotted var(--line-3)}
+.chart-key i.n{height:12px;width:12px;border-radius:50%;background:var(--bad-2);border:1.5px solid var(--bad-3)}
+
+textarea{width:100%;min-height:260px;font:400 var(--t-s)/1.6 var(--f-mono);
+  border:1.5px solid var(--line-2);border-radius:var(--r-medium);padding:var(--s4);
+  background:transparent;color:var(--ink)}
+pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0;color:var(--ink-2)}
+.p-only{display:none}
+
+/* ---------- fluidez ---------- */
+@media (max-width:1000px){
+  .kpis>.kpi:nth-child(5),.kpis>.kpi:nth-child(6),.kpis>.kpi:nth-child(7),.kpi.hero{
+    grid-column:span 6;padding-left:0;border-left:0;border-top:var(--dot);padding-top:var(--s4)}
+  .kpis>.kpi:nth-child(5),.kpi.hero:first-child{grid-column:span 12}
+  .kpis>.kpi:nth-child(-n+4),.kpi.ctx{grid-column:span 6}
+}
+@media (max-width:900px){
+  .legend{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .brand .wm{display:none}
+  .brand{padding:0 14px}
+  .topbar{min-height:52px}
+}
+@media (max-width:720px){
+  .tabs button{padding:0 14px}
+  .themebtn{padding:0 14px}
+  .themebtn span{display:none}
+  .kpis>.kpi:nth-child(5),.kpis>.kpi:nth-child(6),.kpis>.kpi:nth-child(7),.kpi.hero,
+  .kpis>.kpi:nth-child(-n+4),.kpi.ctx,.kpis>.kpi:nth-child(n+8),.kpi.mini{grid-column:span 12}
+  .mgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid{grid-template-columns:1fr}
+  .flatbox label.f{flex:1 1 100%}
+  .verdict-line{font-size:16px}
+  .casc li{grid-template-columns:1fr 116px;gap:var(--s2)}
+  .casc .bar{grid-column:1/-1;order:3}
+  .kpis{gap:var(--s4)}
+}
+
+/* ============================================================
+   IMPRESSÃO — 1 página A4
+   ============================================================ */
+@media print{
+  @page{size:A4 portrait;margin:10mm}
+  :root{--t-3xl:26px;--t-2xl:20px;--t-xl:16px;--t-l:13px;--t-m:9.2px;--t-s:8.2px;--t-xs:7.2px;
+    --s5:10px;--s4:8px;--s3:6px;--s6:12px;--pad-card:0;--gutter:0;--r-card:0;
+    --bg:#fff;--paper:#fff;--paper-2:#fff;--ink:#000;--ink-2:#222;--mut:#555;
+    --line:rgba(0,0,0,.25);--dot:1px dotted rgba(0,0,0,.4)}
+  body{background:#fff;color:#000;font-size:9.2px}
+  .topbar,.toolbar,.tabs,.themebtn,button,.colswitch,.tw-hint,.note,.def,.alert.aviso,
+  details.mdet,.chart-key{display:none!important}
+  header{padding:0 0 6px;border-bottom:1px solid #999;width:auto}
+  header .meta{display:none}
+  main{padding:0;width:auto}
+  .verdict{padding:0;margin:8px 0 0;border-bottom:1px solid #999;padding-bottom:8px;background:none}
+  .verdict-top{border:0;padding:0}
+  .verdict-line{margin:6px 0 10px;font-size:11px}
+  .verdict-line b{background:none;padding:0}
+  .kpis{gap:8px 14px}
+  .card{padding:0;margin:10px 0 0;break-inside:avoid;background:none}
+  .card h2{font-size:12px;margin:0 0 4px;border-bottom:1px solid #ccc;padding-bottom:2px}
+  section.tab{display:none!important;margin:0}
+  section.tab::before{display:none}
+  #tab-fluxo{display:block!important}
+  #tab-fluxo .card:first-child .tw{display:none}
+  .chartwrap{padding:0;background:none}
+  .p-only{display:block!important}
+  table{font-size:8px}
+  th,td{padding:2px 4px}
+  th{background:none;border-bottom:1px solid #999;color:#000}
+  .p-prem{display:grid;grid-template-columns:repeat(4,1fr);gap:4px 12px;margin:8px 0 0;
+    font-size:8.2px;border-top:1px solid #ccc;padding-top:6px}
+  .p-prem div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted #ddd}
+  .p-prem span{color:#555}
+  .p-foot{margin-top:10px;padding-top:4px;border-top:1px solid #ccc;font-size:7.2px;color:#555}
+}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="brand" href="#tab-projeto"><span class="mark" aria-hidden="true"><svg viewBox="0 0 26 26"><path d="M2 6 L13 19 L24 6" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="square"></path></svg></span><span class="wm">airbnb calc</span></a>
+  <nav class="tabs" id="tabs" aria-label="Seções">
+    <button data-t="projeto" class="on">Projeto</button>
+    <button data-t="capex">CAPEX</button>
+    <button data-t="operacao">Operação</button>
+    <button data-t="demanda">Demanda</button>
+    <button data-t="suprimentos">Suprimentos</button>
+    <button data-t="risco">Risco &amp; rollout</button>
+    <button data-t="fluxo">Fluxo de caixa</button>
+    <button data-t="formulas">Fórmulas</button>
+    <button data-t="json">JSON</button>
+  </nav>
+  <button class="themebtn" id="btnTheme" type="button" aria-pressed="false" title="Alternar claro / escuro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M19.8 4.2l-2.1 2.1M6.3 17.7l-2.1 2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg><span id="themeLabel">Escuro</span></button>
+</div>
+<header>
+  <h1 id="hNome">Airbnb Calc</h1>
+  <span class="sub"><span class="pill" id="hTipo">apartamento</span> <span id="hCidade"></span></span>
+  <div class="toolbar" style="margin-left:auto">
+    <button id="btnExport">Exportar JSON</button>
+    <label><input type="file" id="fileImport" accept="application/json,.json" class="hide"><button id="btnImport">Importar JSON</button></label>
+    <button id="btnReset" class="danger">Resetar</button>
+    <button id="btnPrint" class="primary">Imprimir resumo</button>
+  </div>
+  <span class="meta">airbnb-calc.v1 · roda 100% no browser · dados ficam no seu navegador</span>
+</header>
+<main>
+
+  <div class="alerts" id="alerts"></div>
+
+  <div class="verdict">
+    <div class="verdict-top">
+      <span class="eyebrow">Veredito · horizonte de <span id="vHoriz">5</span> anos</span>
+      <span class="eyebrow" style="color:var(--ink-2)">Cenário de ocupação</span>
+      <div class="seg" id="segCenario">
+        <button data-c="conservador">Conservador</button>
+        <button data-c="base" class="on">Base</button>
+        <button data-c="otimista">Otimista</button>
+      </div>
+    </div>
+    <p class="verdict-line" id="veredito"><span></span></p>
+    <div class="kpis" id="kpis"></div>
+  </div>
+
+  <div class="p-only p-prem" id="pPrem"></div>
+
+  <!-- PROJETO -->
+  <section class="tab on" id="tab-projeto">
+    <div class="card">
+      <h2>Intenção e tipo</h2>
+      <div class="grid">
+        <label class="f">Nome do projeto<input data-k="projeto.nome" data-t="str"></label>
+        <label class="f">Cidade<input data-k="projeto.cidade" data-t="str"></label>
+        <label class="f">UF<input data-k="projeto.uf" data-t="str" maxlength="2"></label>
+        <label class="f">Tipo de projeto<select data-k="projeto.tipo" data-t="str">
+          <option value="apartamento">apartamento — compra apto pronto</option>
+          <option value="casa">casa — compra casa pronta</option>
+          <option value="terreno">terreno — só terreno, sem receita</option>
+          <option value="terreno_casas">terreno_casas — terreno + N casas</option>
+        </select></label>
+        <label class="f">Objetivo<select data-k="projeto.objetivo" data-t="str">
+          <option value="yield">yield — renda de diárias</option>
+          <option value="flip">flip pós-obra</option>
+          <option value="misto">uso misto (dono + Airbnb)</option>
+        </select></label>
+        <label class="f">Horizonte (anos, 1–10)<input type="number" min="1" max="10" step="1" data-k="projeto.horizonte_anos" data-t="int"></label>
+        <label class="f">Moeda<input value="BRL" disabled></label>
+        <label class="f">Saldo inicial de caixa (BRL)<input type="number" step="1000" data-k="operacao.saldo_inicial_brl" data-t="num"></label>
+      </div>
+      <p class="note">Tipo <b>terreno</b>: nenhuma unidade opera (receita 0); só IPTU e outros custos correm. Tipo <b>terreno_casas</b>: use o assistente abaixo para gerar CAPEX e unidades; as casas abrem no mês seguinte ao fim da obra.</p>
+    </div>
+
+    <div class="card" id="cardObra">
+      <h2>Assistente terreno + casas</h2>
+      <div class="grid">
+        <label class="f">Área do terreno (m²)<input type="number" step="1" data-k="obra.area_terreno_m2" data-t="num"></label>
+        <label class="f">Preço do terreno (BRL)<input type="number" step="1000" data-k="obra.preco_terreno_brl" data-t="num"></label>
+        <label class="f">Nº de casas<input type="number" step="1" min="0" data-k="obra.n_casas" data-t="int"></label>
+        <label class="f">m² construído por casa<input type="number" step="1" data-k="obra.m2_por_casa" data-t="num"></label>
+        <label class="f">Padrão construtivo<select data-k="obra.padrao" data-t="str">
+          <option value="economico">econômico</option><option value="medio">médio</option><option value="alto">alto</option><option value="custom">custom (usa o R$/m² abaixo)</option>
+        </select></label>
+        <label class="f">R$/m² de obra<input type="number" step="50" data-k="obra.custo_m2_brl" data-t="num"></label>
+        <label class="f">Prazo da obra (meses)<input type="number" step="1" min="0" data-k="obra.prazo_meses" data-t="int"></label>
+        <label class="f">Contingência (%)<input type="number" step="1" data-k="obra.contingencia_pct" data-t="pct"></label>
+        <label class="f">Projeto / arquitetura / taxas (BRL)<input type="number" step="1000" data-k="obra.projeto_taxas_brl" data-t="num"></label>
+        <label class="f">Decoração por casa (BRL)<input type="number" step="1000" data-k="obra.decor_por_casa_brl" data-t="num"></label>
+        <label class="f">Equipamentos por casa (BRL)<input type="number" step="1000" data-k="obra.equip_por_casa_brl" data-t="num"></label>
+      </div>
+      <p class="def">R$/m² por padrão: econômico <b>2.500</b>, médio <b>3.500</b>, alto <b>5.000</b> — estimativa genérica, <b>não é CUB oficial</b>. Confirme com orçamento local. Contingência default <b>10%</b> sobre obra + decoração + equipamentos.</p>
+      <div class="toolbar" style="margin-top:var(--s4)">
+        <button class="primary" id="btnGerarObra">Gerar CAPEX e unidades a partir do terreno</button>
+        <span class="note" style="margin:0">Substitui as linhas de CAPEX e a lista de unidades.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPEX -->
+  <section class="tab" id="tab-capex">
+    <div class="card">
+      <h2 id="capexTitle">CAPEX</h2>
+      <div class="stack" id="capexStack" role="img"></div>
+      <ul class="legend" id="capexLegend"></ul>
+      <div class="callout" id="capexCallout"></div>
+      <h3>Linhas de CAPEX</h3>
+      <div class="grid" style="margin-bottom:var(--s3)">
+        <label class="f">ITBI (% sobre a linha base)<input type="number" step="0.1" data-k="aquisicao_pct.itbi_pct" data-t="pct"></label>
+        <label class="f">Cartório: escritura + registro + certidões (%)<input type="number" step="0.1" data-k="aquisicao_pct.cartorio_pct" data-t="pct"></label>
+        <label class="f">&nbsp;<button id="btnAplicarPct">Recalcular sobre a linha “compra”/“terreno”</button></label>
+      </div>
+      <div class="tw"><table id="tblCapex"></table></div>
+      <div class="toolbar" style="margin-top:var(--s3)"><button id="btnAddCapex">+ linha</button></div>
+      <p class="def">ITBI <b>3%</b> (SP capital; 2%–3% em geral), cartório <b>1,5%</b> (1%–2%). <b>A alíquota real depende do município — confirme.</b></p>
+      <p class="note">Mês 0 = antes do primeiro mês de operação. “Meses” espalha o valor igualmente a partir do mês inicial (obra). Categorias: aquisicao, cartorio, obra, mobiliario, equipamentos, projeto, contingencia, outros.</p>
+    </div>
+  </section>
+
+  <!-- OPERAÇÃO -->
+  <section class="tab" id="tab-operacao">
+    <div class="card">
+      <h2>Operação e gente — OPEX recorrente</h2>
+      <div class="grid">
+        <label class="f">Modelo<select data-k="operacao.modelo" data-t="str">
+          <option value="autogestao">autogestão</option><option value="administradora">administradora</option><option value="hibrido">híbrido</option>
+        </select></label>
+        <label class="f">Comissão administradora (% da receita de diárias)<input type="number" step="1" data-k="operacao.admin_pct" data-t="pct"></label>
+        <label class="f">Taxa da plataforma / host (%)<input type="number" step="0.5" data-k="operacao.plataforma_pct" data-t="pct"></label>
+        <label class="f">Impostos sobre receita (%)<input type="number" step="0.5" data-k="operacao.impostos_pct" data-t="pct"></label>
+        <label class="f">Condomínio / mês / unidade ativa<input type="number" step="50" data-k="operacao.condominio_mes_brl" data-t="num"></label>
+        <label class="f">IPTU / ano (projeto inteiro)<input type="number" step="100" data-k="operacao.iptu_ano_brl" data-t="num"></label>
+        <label class="f">Energia + água + internet / mês / unidade<input type="number" step="50" data-k="operacao.utilidades_mes_brl" data-t="num"></label>
+        <label class="f">Seguro / mês / unidade ativa<input type="number" step="10" data-k="operacao.seguro_mes_brl" data-t="num"></label>
+        <label class="f">Outros custos fixos / mês (projeto)<input type="number" step="50" data-k="operacao.outros_mes_brl" data-t="num"></label>
+      </div>
+      <label class="chk"><input type="checkbox" data-k="operacao.suprimentos_na_admin" data-t="bool"> Suprimentos (limpeza, amenities) já inclusos na comissão da administradora — não abater de novo</label>
+      <p class="def">Admin <b>20%</b> (mercado BR 15%–35%), plataforma <b>3%</b> (3%–5%), impostos <b>0%</b> — <b>preencha com seu contador</b>. Admin só é cobrada nos modelos administradora e híbrido.</p>
+
+      <h3>Caseiro CLT (multi-casa)</h3>
+      <label class="chk"><input type="checkbox" data-k="caseiros.ativo" data-t="bool"> Caseiro ativo</label>
+      <div class="grid" style="margin-top:var(--s2)">
+        <label class="f">Salário bruto / mês (BRL)<input type="number" step="100" data-k="caseiros.salario_bruto_mes" data-t="num"></label>
+        <label class="f">Multiplicador de encargos<input type="number" step="0.05" data-k="caseiros.encargos_mult" data-t="num"></label>
+        <label class="f">Casas por caseiro<input type="number" step="1" min="1" data-k="caseiros.casas_por_caseiro" data-t="int"></label>
+        <label class="f">Bônus (% sobre a base)<input type="number" step="0.5" data-k="caseiros.bonus_pct" data-t="pct"></label>
+        <label class="f">Base do bônus (obrigatório)<select data-k="caseiros.bonus_base" data-t="str">
+          <option value="receita_bruta">receita bruta das diárias</option>
+          <option value="liquida_pos_plataforma">líquida após plataforma</option>
+          <option value="liquida_pos_admin">líquida após plataforma e admin</option>
+        </select></label>
+      </div>
+      <div id="caseiroResumo" class="note"></div>
+      <p class="def">Encargos <b>1,8×</b> (≈80% de 13º, férias, FGTS, INSS, provisões) — <b>estimativa, não tabela oficial</b>. Nº de caseiros = ⌈unidades ativas ÷ casas por caseiro⌉. Com administradora, o default da base é <b>líquida após admin</b> para os dois não morderem a mesma fatia.</p>
+    </div>
+  </section>
+
+  <!-- DEMANDA -->
+  <section class="tab" id="tab-demanda">
+    <div class="card">
+      <h2>Demanda e preço</h2>
+      <div class="grid">
+        <label class="f">Noites por mês<input type="number" step="1" data-k="operacao.noites_mes" data-t="num"></label>
+        <label class="f">Estadia média (noites) → checkouts<input type="number" step="0.5" data-k="operacao.estada_media" data-t="num"></label>
+        <label class="f">Taxa de limpeza cobrada do hóspede (BRL / checkout)<input type="number" step="10" data-k="operacao.taxa_limpeza_hospede_brl" data-t="num"></label>
+        <label class="f">Quem fica com a taxa de limpeza<select data-k="operacao.limpeza_fica_com_host" data-t="bool">
+          <option value="true">host (vira receita)</option><option value="false">pass-through (não entra no caixa)</option>
+        </select></label>
+      </div>
+      <p class="def">30 noites/mês, estadia média <b>3</b> noites, taxa de limpeza <b>0</b>. Se fica com o host, entra na receita bruta e paga plataforma e impostos, mas não comissão da administradora.</p>
+      <h3>Unidades</h3>
+      <div class="units" id="tblUnidades"></div>
+      <div class="toolbar" style="margin-top:var(--s4)"><button id="btnAddUnidade">+ unidade</button></div>
+      <p class="note">Ocupação em % por mês (jan–dez, repetido a cada ano). O campo <b>Ocupação</b> aplica o mesmo valor aos 12 meses; abra “Sazonalidade” só se algum mês for diferente. “Abre no mês” = primeiro mês com receita (1 = já opera no mês 1).</p>
+    </div>
+  </section>
+
+  <!-- SUPRIMENTOS -->
+  <section class="tab" id="tab-suprimentos">
+    <div class="card">
+      <h2>Da diária cheia ao que sobra — por noite ocupada</h2>
+      <ol class="casc" id="casc"></ol>
+      <p class="note" id="cascNote"></p>
+    </div>
+    <div class="card">
+      <h2>Itens de suprimento</h2>
+      <p class="note" style="margin-top:0">Cada item custa por <b>checkout</b> (turno de limpeza) ou por <b>noite ocupada</b> — assim escala com a ocupação. “mês” é só ajuste residual por unidade ativa e não pode passar de 20% do total.</p>
+      <div class="tw"><table id="tblSupr"></table></div>
+      <div class="toolbar" style="margin-top:var(--s3)"><button id="btnAddSupr">+ item</button></div>
+      <div id="suprResumo" style="margin-top:var(--s5)"></div>
+    </div>
+  </section>
+
+  <!-- RISCO -->
+  <section class="tab" id="tab-risco">
+    <div class="card">
+      <h2>Cenários de ocupação</h2>
+      <p class="note" style="margin-top:0">Multiplicador aplicado sobre a occupancy informada em cada unidade.</p>
+      <div class="grid">
+        <label class="f">Conservador (×)<input type="number" step="0.05" data-k="risco.occupancy_cenarios.conservador" data-t="num"></label>
+        <label class="f">Base (×)<input type="number" step="0.05" data-k="risco.occupancy_cenarios.base" data-t="num"></label>
+        <label class="f">Otimista (×)<input type="number" step="0.05" data-k="risco.occupancy_cenarios.otimista" data-t="num"></label>
+        <label class="f">Reserva de caixa (meses de OPEX)<input type="number" step="1" data-k="risco.reserva_meses_opex" data-t="num"></label>
+      </div>
+      <p class="def">Defaults <b>0,7× / 1,0× / 1,15×</b>, reserva <b>3 meses</b>. Occupancy resultante é travada em 100%.</p>
+      <h3>Rollout por ano</h3>
+      <div class="tw"><table id="tblRollout"></table></div>
+      <p class="note">CAPEX extra entra no mês 1 do ano. Use para obra atrasada (mult &lt; 1 no ano 1), rampa de reviews, ou nova unidade.</p>
+      <h3>O que quebra o projeto?</h3>
+      <label class="f">Nota de risco (vacância prolongada, obra atrasada, churn de reviews…)<input data-k="risco.nota" data-t="str"></label>
+    </div>
+  </section>
+
+  <!-- FLUXO -->
+  <section class="tab" id="tab-fluxo">
+    <div class="card">
+      <h2>Caixa acumulado — <span id="fluxoHoriz">5</span> anos <span class="pill" id="fluxoCenario">base</span></h2>
+      <div class="chartwrap">
+        <svg class="chart" id="chart" viewBox="0 0 1000 300" role="img"></svg>
+      </div>
+      <div class="chart-key">
+        <span><i></i> caixa acumulado</span>
+        <span><i class="z"></i> linha do zero</span>
+        <span><i class="n"></i> período com caixa negativo</span>
+      </div>
+      <p class="note" id="fluxoNote"></p>
+    </div>
+    <div class="card">
+      <h2>Mês a mês — ano 1</h2>
+      <label class="colswitch"><input type="checkbox" id="cbCols" checked> Mostrar só as colunas essenciais</label>
+      <div class="tw"><table id="tblMeses"></table></div>
+      <p class="tw-hint">Arraste a tabela para o lado para ver todas as colunas. Mês 0 = saldo inicial − CAPEX do mês 0. Linha marcada = primeiro mês com caixa negativo.</p>
+    </div>
+    <div class="card">
+      <h2>P&amp;L anual — anos 1 a <span id="hHoriz">5</span></h2>
+      <div class="tw"><table id="tblAnos"></table></div>
+      <p class="p-only p-foot">airbnb-calc.v1 · estimativa gerada no navegador a partir de premissas editáveis. ITBI, cartório, encargos CLT e impostos são defaults, não alíquotas oficiais. Confirme com contador, cartório e orçamento de obra.</p>
+    </div>
+  </section>
+
+  <!-- FÓRMULAS -->
+  <section class="tab" id="tab-formulas">
+    <div class="card">
+      <h2>Fórmulas (auditáveis)</h2>
+<pre class="formulas">noites_ocupadas_mes_u   = noites_mes × min(1, occupancy_mes_u × cenário × rollout_ano)     [0 antes de abre_no_mes; 0 se tipo = terreno]
+receita_diarias_mes     = Σ_u ADR_u × noites_ocupadas_mes_u
+checkouts_mes           = noites_ocupadas_mes ÷ estada_media
+receita_limpeza_mes     = taxa_limpeza_hospede × checkouts_mes            (só se fica com o host)
+receita_bruta_mes       = receita_diarias + receita_limpeza
+suprimentos_mes         = Σ item[checkout] × checkouts + Σ item[noite_ocupada] × noites + Σ item[mes] × unidades_ativas
+                          (se suprimentos_na_admin: calculado para exibição, mas não abatido)
+diarias_liq_apos_supr   = receita_diarias − suprimentos_mes
+taxa_plataforma         = plataforma_pct × receita_bruta
+taxa_admin              = admin_pct × receita_diarias                      (modelos administradora e híbrido)
+impostos                = impostos_pct × receita_bruta
+receita_liquida_ops     = receita_bruta − suprimentos − plataforma − admin − impostos
+n_caseiros              = ativo ? ⌈unidades_ativas ÷ casas_por_caseiro⌉ : 0
+base_bonus              = receita_diarias | receita_diarias − plataforma | receita_diarias − plataforma − admin   (conforme bonus_base)
+custo_caseiros_mes      = n_caseiros × salário × encargos_mult + bonus_pct × base_bonus   (0 se n_caseiros = 0)
+opex_fixo_mes           = unidades_ativas × (condomínio + utilidades + seguro) + IPTU ÷ 12 + outros
+opex_total_mes          = opex_fixo + caseiros + suprimentos (se não na admin)
+resultado_mes           = receita_bruta − plataforma − admin − impostos − opex_total
+capex_total             = Σ capex[].valor_brl        (cada linha no mês inicial, espalhada por "meses")
+caixa_0                 = saldo_inicial − capex(mês 0);   caixa_m = caixa_{m−1} + resultado_m − capex_m
+payback                 = primeiro mês em que Σ resultado − Σ capex ≥ 0        (independe do saldo inicial)
+ROI ano n               = resultado_n ÷ capex_total
+occupancy de equilíbrio = menor occupancy flat (todas as unidades, 12 meses, cenário base) com resultado_ano1 ≥ 0
+reserva sugerida        = reserva_meses × (opex_total_ano1 ÷ 12)
+</pre>
+    </div>
+    <div class="card">
+      <h2>O que este app não é</h2>
+      <p class="note" style="margin-top:0">Não é PMS nem channel manager: não sincroniza com Airbnb, não gerencia reservas. Não é contabilidade fiscal: ITBI, cartório, encargos CLT e impostos são defaults editáveis e rotulados, não alíquotas oficiais. Não substitui cartório, contador ou orçamento de obra. Um operador, sem login, sem servidor.</p>
+    </div>
+  </section>
+
+  <!-- JSON -->
+  <section class="tab" id="tab-json">
+    <div class="card">
+      <h2>Estado (airbnb-calc.v1)</h2>
+      <p class="note" style="margin-top:0">Cole um JSON e clique “Carregar do texto” para importar sem arquivo. O estado também fica salvo em localStorage.</p>
+      <textarea id="jsonArea" spellcheck="false"></textarea>
+      <div class="toolbar" style="margin-top:var(--s3)"><button id="btnLoadText" class="primary">Carregar do texto</button><button id="btnRefreshText">Atualizar texto com o estado atual</button><span id="jsonMsg" class="note" style="margin:0"></span></div>
+    </div>
+  </section>
+</main>
+
+<script>
+/*ENGINE-START*/
+const SCHEMA = "airbnb-calc.v1";
+const TIPOS = ["apartamento", "casa", "terreno", "terreno_casas"];
+const MODELOS = ["autogestao", "administradora", "hibrido"];
+const BONUS_BASES = ["receita_bruta", "liquida_pos_plataforma", "liquida_pos_admin"];
+const POR = ["checkout", "noite_ocupada", "mes"];
+const CUSTO_M2 = { economico: 2500, medio: 3500, alto: 5000 };
+const flat = v => Array(12).fill(v);
+const num = x => (Number.isFinite(+x) && x !== null && x !== "" ? +x : 0);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const clone = o => JSON.parse(JSON.stringify(o));
+
+function defaults() {
+  return {
+    schema: SCHEMA,
+    projeto: { nome: "Meu Airbnb", cidade: "São Paulo", uf: "SP", tipo: "apartamento", objetivo: "yield", moeda: "BRL", horizonte_anos: 5 },
+    unidades: [{ id: "u1", nome: "Unidade 1", tipologia: "apto", m2: 45, abre_no_mes: 1, adr_brl: 350, occupancy_mensal: flat(0.6) }],
+    capex: [
+      { id: "compra", categoria: "aquisicao", descricao: "Preço de compra", valor_brl: 500000, mes_inicio: 0, meses: 1 },
+      { id: "itbi", categoria: "cartorio", descricao: "ITBI (3% default)", valor_brl: 15000, mes_inicio: 0, meses: 1 },
+      { id: "cartorio", categoria: "cartorio", descricao: "Escritura + registro + certidões (1,5% default)", valor_brl: 7500, mes_inicio: 0, meses: 1 },
+      { id: "obra", categoria: "obra", descricao: "Reforma / fit-out", valor_brl: 40000, mes_inicio: 0, meses: 1 },
+      { id: "decor", categoria: "mobiliario", descricao: "Decoração + mobiliário", valor_brl: 25000, mes_inicio: 0, meses: 1 },
+      { id: "equip", categoria: "equipamentos", descricao: "Equipamentos (A/C, TV, enxoval, fechadura)", valor_brl: 15000, mes_inicio: 0, meses: 1 }
+    ],
+    aquisicao_pct: { itbi_pct: 0.03, cartorio_pct: 0.015 },
+    obra: { area_terreno_m2: 1000, preco_terreno_brl: 400000, n_casas: 4, m2_por_casa: 60, padrao: "medio", custo_m2_brl: 3500, prazo_meses: 12, contingencia_pct: 0.10, projeto_taxas_brl: 40000, decor_por_casa_brl: 25000, equip_por_casa_brl: 15000 },
+    operacao: {
+      modelo: "administradora", admin_pct: 0.20, plataforma_pct: 0.03, impostos_pct: 0,
+      condominio_mes_brl: 800, iptu_ano_brl: 2400, utilidades_mes_brl: 400, seguro_mes_brl: 100, outros_mes_brl: 0,
+      suprimentos_na_admin: false, noites_mes: 30, estada_media: 3, taxa_limpeza_hospede_brl: 0, limpeza_fica_com_host: true, saldo_inicial_brl: 0
+    },
+    caseiros: { ativo: false, salario_bruto_mes: 2500, encargos_mult: 1.8, casas_por_caseiro: 5, bonus_pct: 0.05, bonus_base: "liquida_pos_admin" },
+    suprimentos: [
+      { id: "limpeza", nome: "Limpeza por checkout", custo_unitario: 150, por: "checkout" },
+      { id: "amenities", nome: "Kit amenities", custo_unitario: 25, por: "checkout" },
+      { id: "reposicao", nome: "Reposição por noite (papel, café…)", custo_unitario: 8, por: "noite_ocupada" }
+    ],
+    rollout: [1, 2, 3, 4, 5].map(ano => ({ ano, occupancy_mult: 1.0, capex_extra_brl: 0 })),
+    risco: { occupancy_cenarios: { conservador: 0.7, base: 1.0, otimista: 1.15 }, reserva_meses_opex: 3, nota: "" }
+  };
+}
+
+function merge(base, over) {
+  if (Array.isArray(over)) return clone(over);
+  if (over && typeof over === "object") {
+    const out = base && typeof base === "object" && !Array.isArray(base) ? { ...base } : {};
+    for (const k of Object.keys(over)) out[k] = merge(out[k], over[k]);
+    return out;
+  }
+  return over === undefined ? base : over;
+}
+
+// Erros bloqueiam import. Retorna lista de strings (vazia = ok).
+function validate(s) {
+  const e = [];
+  if (!s || typeof s !== "object" || Array.isArray(s)) return ["O JSON não é um objeto."];
+  if (s.schema !== SCHEMA) e.push(`Campo "schema" ausente ou diferente de "${SCHEMA}".`);
+  if (!s.projeto || typeof s.projeto !== "object") e.push('Bloco "projeto" ausente.');
+  else if (!TIPOS.includes(s.projeto.tipo)) e.push(`projeto.tipo inválido ("${s.projeto.tipo}"). Use: ${TIPOS.join(" | ")}.`);
+  if (!Array.isArray(s.capex)) e.push('Lista "capex[]" ausente.');
+  if (s.unidades !== undefined && !Array.isArray(s.unidades)) e.push('"unidades" precisa ser uma lista.');
+  if (s.suprimentos !== undefined) {
+    if (!Array.isArray(s.suprimentos)) e.push('"suprimentos" precisa ser uma lista.');
+    else if (!s.suprimentos.some(i => i && (i.por === "checkout" || i.por === "noite_ocupada"))) e.push("Suprimentos precisam de ao menos um item por checkout ou por noite_ocupada (verba mensal solta não escala com ocupação).");
+  }
+  if (s.caseiros && s.caseiros.ativo && !BONUS_BASES.includes(s.caseiros.bonus_base)) e.push(`caseiros.bonus_base é obrigatório com caseiro ativo. Use: ${BONUS_BASES.join(" | ")}.`);
+  if (s.operacao && s.operacao.modelo !== undefined && !MODELOS.includes(s.operacao.modelo)) e.push(`operacao.modelo inválido ("${s.operacao.modelo}").`);
+  return e;
+}
+
+function capexTotal(s) { return (s.capex || []).reduce((a, l) => a + num(l.valor_brl), 0); }
+
+function calc(s, cenario = "base") {
+  const avisos = [];
+  const p = s.projeto || {}, op = s.operacao || {}, cs = s.caseiros || {}, risco = s.risco || {};
+  const H = clamp(Math.round(num(p.horizonte_anos)) || 5, 1, 10);
+  const NM = H * 12;
+  const cenMult = Math.max(0, num((risco.occupancy_cenarios || {})[cenario] ?? 1));
+  const noitesMes = num(op.noites_mes) > 0 ? num(op.noites_mes) : 30;
+  let estada = num(op.estada_media); if (estada <= 0) { estada = 1; avisos.push("Estadia média inválida; usando 1 noite."); }
+  let adminPct = num(op.admin_pct); if (adminPct > 1) { avisos.push(`Comissão da administradora acima de 100% (${(adminPct * 100).toFixed(0)}%) — travada em 100%. Confira o campo.`); adminPct = 1; } if (adminPct < 0) adminPct = 0;
+  const temAdmin = (op.modelo === "administradora" || op.modelo === "hibrido") && adminPct > 0;
+  const adminEf = temAdmin ? adminPct : 0;
+  let platPct = clamp(num(op.plataforma_pct), 0, 1); if (num(op.plataforma_pct) > 1) avisos.push("Taxa da plataforma acima de 100% — travada em 100%.");
+  let impPct = clamp(num(op.impostos_pct), 0, 1);
+  if (impPct === 0) avisos.push("Impostos sobre receita = 0%: preencha com seu contador (carnê-leão / PJ).");
+  const tipoTerreno = p.tipo === "terreno";
+  const unidades = Array.isArray(s.unidades) ? s.unidades : [];
+  if (tipoTerreno && unidades.length) avisos.push("Tipo terreno: unidades ignoradas, receita 0 até construir (mude para terreno_casas).");
+  if (!tipoTerreno && unidades.length === 0) avisos.push("Nenhuma unidade cadastrada: receita 0.");
+  const supr = Array.isArray(s.suprimentos) ? s.suprimentos : [];
+  const naAdmin = !!op.suprimentos_na_admin;
+  if (naAdmin && !temAdmin) avisos.push("\"Suprimentos na admin\" marcado, mas não há administradora ativa — suprimentos não estão sendo abatidos de ninguém.");
+  const casAtivo = !!cs.ativo;
+  const casasPor = Math.max(1, Math.round(num(cs.casas_por_caseiro)) || 1);
+  if (casAtivo && num(cs.casas_por_caseiro) < 1) avisos.push("Casas por caseiro < 1; usando 1.");
+  const encargos = num(cs.encargos_mult) > 0 ? num(cs.encargos_mult) : 1;
+  if (casAtivo && num(cs.encargos_mult) < 1) avisos.push("Multiplicador de encargos < 1: custo empregador abaixo do salário bruto. Default 1,8.");
+  const bonusPct = Math.max(0, num(cs.bonus_pct));
+  const bonusBase = BONUS_BASES.includes(cs.bonus_base) ? cs.bonus_base : "receita_bruta";
+  if (casAtivo && temAdmin && bonusBase === "receita_bruta" && bonusPct > 0) avisos.push("Dupla mordida: bônus do caseiro sobre a receita BRUTA e comissão da administradora sobre a mesma receita. Se é isso mesmo, ok; senão mude a base do bônus para \"líquida após admin\".");
+  if (casAtivo && unidades.length === 0) avisos.push("Caseiro ativo sem unidades: nº de caseiros = 0 (nada para gerir).");
+  const limpezaHost = op.limpeza_fica_com_host === undefined ? true : (op.limpeza_fica_com_host === true || op.limpeza_fica_com_host === "true");
+  const taxaLimpeza = Math.max(0, num(op.taxa_limpeza_hospede_brl));
+  let adrNegAvisado = false;
+  const rollout = Array.isArray(s.rollout) ? s.rollout : [];
+  const rl = y => rollout.find(r => num(r.ano) === y) || rollout[y - 1] || {};
+
+  // CAPEX por mês (0..NM)
+  const capexMes = new Array(NM + 1).fill(0);
+  for (const l of (s.capex || [])) {
+    const v = num(l.valor_brl), mi = Math.max(0, Math.round(num(l.mes_inicio))), ms = Math.max(1, Math.round(num(l.meses)) || 1);
+    for (let i = 0; i < ms; i++) capexMes[Math.min(mi + i, NM)] += v / ms;
+  }
+  for (let y = 1; y <= H; y++) capexMes[(y - 1) * 12 + 1] += num(rl(y).capex_extra_brl);
+  const capTotal = capexTotal(s) + rollout.slice(0, H).reduce((a, r) => a + num(r.capex_extra_brl), 0);
+
+  // suprimentos: checar residual mensal
+  const suprMesItens = supr.filter(i => i && i.por === "mes");
+
+  const meses = [];
+  let caixa = num(op.saldo_inicial_brl) - capexMes[0];
+  let acumulado = -capexMes[0];
+  let payback = null, primeiroNeg = null;
+  if (caixa < 0) primeiroNeg = 0;
+  for (let m = 1; m <= NM; m++) {
+    const y = Math.ceil(m / 12), mi = (m - 1) % 12;
+    const rmult = Math.max(0, num(rl(y).occupancy_mult ?? 1));
+    let noites = 0, receita = 0, nAtivas = 0;
+    if (!tipoTerreno) for (const u of unidades) {
+      const abre = Math.round(num(u.abre_no_mes)) || 1;
+      if (m < abre) continue;
+      nAtivas++;
+      const occRaw = num((u.occupancy_mensal || [])[mi]);
+      const occ = clamp(occRaw * cenMult * rmult, 0, 1);
+      let adr = num(u.adr_brl);
+      if (adr < 0) { adr = 0; if (!adrNegAvisado) { avisos.push(`ADR negativo em "${u.nome || u.id}" — tratado como 0.`); adrNegAvisado = true; } }
+      const nu = noitesMes * occ;
+      noites += nu; receita += adr * nu;
+    }
+    const checkouts = noites / estada;
+    const receitaLimpeza = limpezaHost ? taxaLimpeza * checkouts : 0;
+    const receitaBruta = receita + receitaLimpeza;
+    let suprBruto = 0;
+    for (const it of supr) {
+      if (!it) continue;
+      const c = Math.max(0, num(it.custo_unitario));
+      if (it.por === "checkout") suprBruto += c * checkouts;
+      else if (it.por === "noite_ocupada") suprBruto += c * noites;
+      else if (it.por === "mes") suprBruto += c * nAtivas;
+    }
+    const suprEf = naAdmin ? 0 : suprBruto;
+    const plataforma = platPct * receitaBruta;
+    const admin = adminEf * receita;
+    const impostos = impPct * receitaBruta;
+    const nCas = casAtivo && nAtivas > 0 ? Math.ceil(nAtivas / casasPor) : 0;
+    const base = bonusBase === "receita_bruta" ? receita : bonusBase === "liquida_pos_plataforma" ? receita - platPct * receita : receita - platPct * receita - admin;
+    const casFixo = nCas * Math.max(0, num(cs.salario_bruto_mes)) * encargos;
+    const casBonus = nCas > 0 ? bonusPct * Math.max(0, base) : 0;
+    const caseiros = casFixo + casBonus;
+    const opexFixo = nAtivas * (Math.max(0, num(op.condominio_mes_brl)) + Math.max(0, num(op.utilidades_mes_brl)) + Math.max(0, num(op.seguro_mes_brl))) + Math.max(0, num(op.iptu_ano_brl)) / 12 + Math.max(0, num(op.outros_mes_brl));
+    const opexTotal = opexFixo + caseiros + suprEf;
+    const resultado = receitaBruta - plataforma - admin - impostos - opexTotal;
+    const capexM = capexMes[m];
+    caixa += resultado - capexM;
+    acumulado += resultado - capexM;
+    if (payback === null && acumulado >= 0 && capTotal > 0) payback = m;
+    if (primeiroNeg === null && caixa < 0) primeiroNeg = m;
+    meses.push({ m, ano: y, mes: mi + 1, unidades_ativas: nAtivas, noites, checkouts, receita_diarias: receita, receita_limpeza: receitaLimpeza, receita_bruta: receitaBruta,
+      suprimentos_bruto: suprBruto, suprimentos: suprEf, diarias_apos_supr: receita - suprEf, plataforma, admin, impostos,
+      receita_liquida_ops: receitaBruta - suprEf - plataforma - admin - impostos, n_caseiros: nCas, caseiros_fixo: casFixo, caseiros_bonus: casBonus, caseiros, opex_fixo: opexFixo, opex_total: opexTotal, resultado, capex: capexM, caixa, acumulado });
+  }
+  // residual mensal > 20% do total?
+  if (suprMesItens.length) {
+    const tot = meses.slice(0, 12).reduce((a, x) => a + x.suprimentos_bruto, 0);
+    const res = meses.slice(0, 12).reduce((a, x) => a + suprMesItens.reduce((b, it) => b + Math.max(0, num(it.custo_unitario)) * x.unidades_ativas, 0), 0);
+    const noitesA1 = meses.slice(0, 12).reduce((a, x) => a + x.noites, 0);
+    if (noitesA1 > 0 && tot > 0 && res / tot > 0.2) avisos.push(`Suprimentos "por mês" são ${(100 * res / tot).toFixed(0)}% do total (limite 20%). Converta para checkout ou noite_ocupada.`);
+  }
+  const anos = [];
+  for (let y = 1; y <= H; y++) {
+    const ms = meses.slice((y - 1) * 12, y * 12);
+    const sum = k => ms.reduce((a, x) => a + x[k], 0);
+    const a = { ano: y, noites: sum("noites"), checkouts: sum("checkouts"), receita_diarias: sum("receita_diarias"), receita_limpeza: sum("receita_limpeza"), receita_bruta: sum("receita_bruta"), suprimentos: sum("suprimentos"), suprimentos_bruto: sum("suprimentos_bruto"), plataforma: sum("plataforma"), admin: sum("admin"), impostos: sum("impostos"), caseiros: sum("caseiros"), opex_fixo: sum("opex_fixo"), opex_total: sum("opex_total"), resultado: sum("resultado"), capex: sum("capex") + (y === 1 ? capexMes[0] : 0), caixa_fim: ms[11].caixa, occupancy_mult: num(rl(y).occupancy_mult ?? 1) };
+    a.roi = capTotal > 0 ? a.resultado / capTotal : null;
+    a.adr_medio = a.noites > 0 ? a.receita_diarias / a.noites : 0;
+    anos.push(a);
+  }
+  const a1 = anos[0];
+  const nUn = tipoTerreno ? 0 : unidades.length;
+  const kpis = {
+    capex_total: capTotal, receita_ano1: a1.receita_bruta, opex_ano1: a1.opex_total, taxas_ano1: a1.plataforma + a1.admin + a1.impostos, resultado_ano1: a1.resultado,
+    payback_meses: payback, primeiro_mes_negativo: primeiroNeg, caixa_fim: meses[NM - 1].caixa,
+    reserva_sugerida: Math.max(0, num(risco.reserva_meses_opex)) * a1.opex_total / 12,
+    revpar_ano1: nUn > 0 ? a1.receita_diarias / (nUn * noitesMes * 12) : 0, adr_medio_ano1: a1.adr_medio, occupancy_ano1: nUn > 0 ? a1.noites / (nUn * noitesMes * 12) : 0
+  };
+  if (num(op.saldo_inicial_brl) < kpis.reserva_sugerida && kpis.reserva_sugerida > 0) avisos.push(`Saldo inicial abaixo da reserva sugerida (${Math.round(kpis.reserva_sugerida).toLocaleString("pt-BR")} BRL = ${num(risco.reserva_meses_opex)} meses de OPEX).`);
+  return { cenario, H, meses, anos, kpis, avisos, capex_mes0: capexMes[0] };
+}
+
+// menor occupancy flat (0..1, passo 0,5%) com resultado_ano1 >= 0 no cenário base. null = inviável.
+// Avalia o primeiro ano em que alguma unidade opera (ano 1 se abre_no_mes ≤ 12).
+function anoOperacao(s) {
+  const un = Array.isArray(s.unidades) ? s.unidades : [];
+  if (!un.length) return 1;
+  const abre = Math.min(...un.map(u => Math.max(1, Math.round(num(u.abre_no_mes)) || 1)));
+  return clamp(Math.ceil(abre / 12), 1, clamp(Math.round(num((s.projeto || {}).horizonte_anos)) || 5, 1, 10));
+}
+function equilibrio(s) {
+  if ((s.projeto || {}).tipo === "terreno" || !(s.unidades || []).length) return null;
+  const y = anoOperacao(s) - 1;
+  for (let o = 0; o <= 1.0001; o += 0.005) {
+    const t = clone(s); t.unidades = t.unidades.map(u => ({ ...u, occupancy_mensal: flat(o) }));
+    if (calc(t, "base").anos[y].resultado >= 0) return Math.round(o * 1000) / 1000;
+  }
+  return null;
+}
+
+// Assistentes de CAPEX
+function aplicarPct(s) {
+  const base = (s.capex || []).find(l => l.id === "compra" || l.id === "terreno") || (s.capex || []).find(l => l.categoria === "aquisicao");
+  if (!base) return s;
+  const v = num(base.valor_brl), pi = num((s.aquisicao_pct || {}).itbi_pct), pc = num((s.aquisicao_pct || {}).cartorio_pct);
+  const set = (id, cat, desc, val) => { const l = s.capex.find(x => x.id === id); if (l) l.valor_brl = Math.round(val); else s.capex.push({ id, categoria: cat, descricao: desc, valor_brl: Math.round(val), mes_inicio: 0, meses: 1 }); };
+  set("itbi", "cartorio", `ITBI (${(pi * 100).toFixed(1)}%)`, v * pi);
+  set("cartorio", "cartorio", `Escritura + registro + certidões (${(pc * 100).toFixed(1)}%)`, v * pc);
+  return s;
+}
+function gerarObra(s) {
+  const o = s.obra || {}, pct = s.aquisicao_pct || {};
+  const N = Math.max(0, Math.round(num(o.n_casas)));
+  const m2 = Math.max(0, num(o.m2_por_casa));
+  const custoM2 = o.padrao && o.padrao !== "custom" && CUSTO_M2[o.padrao] ? CUSTO_M2[o.padrao] : Math.max(0, num(o.custo_m2_brl));
+  const prazo = Math.max(0, Math.round(num(o.prazo_meses)));
+  const terreno = Math.max(0, num(o.preco_terreno_brl));
+  const obra = N * m2 * custoM2, decor = N * Math.max(0, num(o.decor_por_casa_brl)), equip = N * Math.max(0, num(o.equip_por_casa_brl));
+  const cont = Math.max(0, num(o.contingencia_pct)) * (obra + decor + equip);
+  const r = v => Math.round(v);
+  s.capex = [
+    { id: "terreno", categoria: "aquisicao", descricao: `Terreno ${num(o.area_terreno_m2)} m²`, valor_brl: r(terreno), mes_inicio: 0, meses: 1 },
+    { id: "itbi", categoria: "cartorio", descricao: `ITBI (${(num(pct.itbi_pct) * 100).toFixed(1)}%)`, valor_brl: r(terreno * num(pct.itbi_pct)), mes_inicio: 0, meses: 1 },
+    { id: "cartorio", categoria: "cartorio", descricao: `Escritura + registro (${(num(pct.cartorio_pct) * 100).toFixed(1)}%)`, valor_brl: r(terreno * num(pct.cartorio_pct)), mes_inicio: 0, meses: 1 },
+    { id: "projeto", categoria: "projeto", descricao: "Projeto / arquitetura / taxas de obra", valor_brl: r(num(o.projeto_taxas_brl)), mes_inicio: 0, meses: 1 },
+    { id: "obra", categoria: "obra", descricao: `Obra ${N} casas × ${m2} m² × ${custoM2} R$/m²`, valor_brl: r(obra), mes_inicio: prazo > 0 ? 1 : 0, meses: Math.max(1, prazo) },
+    { id: "decor", categoria: "mobiliario", descricao: `Decoração × ${N}`, valor_brl: r(decor), mes_inicio: prazo, meses: 1 },
+    { id: "equip", categoria: "equipamentos", descricao: `Equipamentos × ${N}`, valor_brl: r(equip), mes_inicio: prazo, meses: 1 },
+    { id: "contingencia", categoria: "contingencia", descricao: `Contingência ${(num(o.contingencia_pct) * 100).toFixed(0)}%`, valor_brl: r(cont), mes_inicio: prazo > 0 ? 1 : 0, meses: Math.max(1, prazo) }
+  ];
+  const adr = (s.unidades && s.unidades[0] && num(s.unidades[0].adr_brl)) || 350;
+  const occ = (s.unidades && s.unidades[0] && s.unidades[0].occupancy_mensal) || flat(0.6);
+  s.unidades = Array.from({ length: N }, (_, i) => ({ id: `c${i + 1}`, nome: `Casa ${i + 1}`, tipologia: "casa", m2, abre_no_mes: prazo + 1, adr_brl: adr, occupancy_mensal: clone(occ) }));
+  if (s.projeto) s.projeto.tipo = "terreno_casas";
+  return s;
+}
+/*ENGINE-END*/
+
+// ---------------- UI ----------------
+const LS = "airbnb-calc.v1", LS_THEME = "airbnb-calc.theme";
+const $ = s => document.querySelector(s);
+const fmt = v => (Number.isFinite(v) ? Math.round(v).toLocaleString("pt-BR") : "—");
+const fmt1 = v => (Number.isFinite(v) ? v.toLocaleString("pt-BR", { maximumFractionDigits: 1, minimumFractionDigits: 0 }) : "—");
+const fmt2 = v => (Number.isFinite(v) ? v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—");
+const pct = v => (Number.isFinite(v) ? (v * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "%" : "—");
+const brl = v => "R$ " + fmt(v);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+const CAT = { aquisicao: ["Aquisição", "var(--cat-aquisicao)"], cartorio: ["ITBI + cartório", "var(--cat-cartorio)"], obra: ["Obra / fit-out", "var(--cat-obra)"], mobiliario: ["Mobiliário", "var(--cat-mobiliario)"], equipamentos: ["Equipamentos", "var(--cat-equip)"], projeto: ["Projeto / taxas", "var(--acc-wash)"], contingencia: ["Contingência", "var(--warn)"], outros: ["Outros", "var(--mut)"] };
+let state, cenario = "base";
+
+function get(o, path) { return path.split(".").reduce((a, k) => (a == null ? undefined : a[k]), o); }
+function set(o, path, v) { const ks = path.split("."); let c = o; for (const k of ks.slice(0, -1)) { if (c[k] == null || typeof c[k] !== "object") c[k] = {}; c = c[k]; } c[ks[ks.length - 1]] = v; }
+const hz = s => clamp(Math.round(num((s.projeto || {}).horizonte_anos)) || 5, 1, 10);
+
+function load() {
+  try { const raw = localStorage.getItem(LS); if (raw) { const j = JSON.parse(raw); if (validate(j).length === 0) return merge(defaults(), j); } } catch (e) { }
+  return defaults();
+}
+function save() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) { } }
+
+// ---- tema
+(function theme() {
+  const r = document.documentElement, b = $("#btnTheme"), l = $("#themeLabel");
+  const sysDark = () => window.matchMedia && window.matchMedia("(prefers-color-scheme:dark)").matches;
+  const isDark = () => { const t = r.getAttribute("data-theme"); return t ? t === "dark" : sysDark(); };
+  const paint = () => { const d = isDark(); l.textContent = d ? "Claro" : "Escuro"; b.setAttribute("aria-pressed", d ? "true" : "false"); };
+  try { const s = localStorage.getItem(LS_THEME); if (s) r.setAttribute("data-theme", s); } catch (e) { }
+  paint();
+  b.addEventListener("click", () => { const next = isDark() ? "light" : "dark"; r.setAttribute("data-theme", next); try { localStorage.setItem(LS_THEME, next); } catch (e) { } paint(); });
+})();
+
+function syncInputs() {
+  document.querySelectorAll("[data-k]").forEach(el => {
+    const v = get(state, el.dataset.k), t = el.dataset.t;
+    if (el.type === "checkbox") el.checked = !!v;
+    else if (t === "pct") el.value = Number.isFinite(+v) ? Math.round(+v * 10000) / 100 : "";
+    else if (t === "bool") el.value = String(!!v);
+    else el.value = v ?? "";
+  });
+}
+function bindInputs() {
+  document.querySelectorAll("[data-k]").forEach(el => {
+    const on = () => {
+      const t = el.dataset.t; let v;
+      if (el.type === "checkbox") v = el.checked;
+      else if (t === "pct") v = el.value === "" ? 0 : +el.value / 100;
+      else if (t === "num") v = el.value === "" ? 0 : +el.value;
+      else if (t === "int") v = el.value === "" ? 0 : Math.round(+el.value);
+      else if (t === "bool") v = el.value === "true";
+      else v = el.value;
+      set(state, el.dataset.k, v);
+      if (el.dataset.k === "obra.padrao" && v !== "custom" && CUSTO_M2[v]) { state.obra.custo_m2_brl = CUSTO_M2[v]; syncInputs(); }
+      if (el.dataset.k === "projeto.horizonte_anos") { ensureRollout(); renderTables(); }
+      if (el.dataset.k === "projeto.tipo") renderTables();
+      renderOut();
+    };
+    el.addEventListener("input", on); el.addEventListener("change", on);
+  });
+}
+function ensureRollout() {
+  const H = hz(state);
+  state.rollout = Array.isArray(state.rollout) ? state.rollout : [];
+  for (let y = 1; y <= H; y++) if (!state.rollout.find(r => num(r.ano) === y)) state.rollout.push({ ano: y, occupancy_mult: 1, capex_extra_brl: 0 });
+  state.rollout = state.rollout.filter(r => num(r.ano) >= 1 && num(r.ano) <= H).sort((a, b) => a.ano - b.ano);
+}
+
+// ---- tabelas e cards editáveis (re-render só em mudança estrutural)
+function rowInput(path, val, cls = "", type = "number", step = "any", extra = "") {
+  return `<input class="${cls}" type="${type}" step="${step}" data-p="${path}" value="${esc(val)}"${extra}>`;
+}
+function rowSelect(path, val, opts) { return `<select data-p="${path}">${opts.map(o => `<option value="${o}"${o === val ? " selected" : ""}>${o}</option>`).join("")}</select>`; }
+function flatOf(u) { const a = (u.occupancy_mensal || []).map(x => Math.round(num(x) * 1000) / 10); return a.length === 12 && a.every(x => x === a[0]) ? a[0] : null; }
+function renderTables() {
+  const s = state;
+  $("#tblCapex").innerHTML = `<tr><th>id</th><th>Categoria</th><th>Descrição</th><th>Valor (BRL)</th><th>Mês inicial</th><th>Meses</th><th></th></tr>` +
+    s.capex.map((l, i) => `<tr><td>${rowInput(`capex.${i}.id`, l.id, "s", "text")}</td><td>${rowSelect(`capex.${i}.categoria`, l.categoria, Object.keys(CAT))}</td><td>${rowInput(`capex.${i}.descricao`, l.descricao, "w", "text")}</td><td>${rowInput(`capex.${i}.valor_brl`, l.valor_brl)}</td><td>${rowInput(`capex.${i}.mes_inicio`, l.mes_inicio ?? 0, "s", "number", "1")}</td><td>${rowInput(`capex.${i}.meses`, l.meses ?? 1, "s", "number", "1")}</td><td><button data-del="capex.${i}" aria-label="Remover linha">×</button></td></tr>`).join("") +
+    `<tr class="tot"><td colspan="3">CAPEX total</td><td id="capexTot"></td><td colspan="3"></td></tr>`;
+  $("#tblUnidades").innerHTML = s.unidades.map((u, i) => {
+    const fl = flatOf(u);
+    return `<div class="unit">
+      <div class="unit-top">${rowInput(`unidades.${i}.nome`, u.nome, "w", "text")}<button data-del="unidades.${i}" title="Remover unidade" aria-label="Remover unidade">×</button></div>
+      <div class="unit-grid">
+        <label class="f">Tipologia${rowSelect(`unidades.${i}.tipologia`, u.tipologia, ["apto", "casa", "studio", "chale", "outro"])}</label>
+        <label class="f">m²${rowInput(`unidades.${i}.m2`, u.m2, "s")}</label>
+        <label class="f">Abre no mês${rowInput(`unidades.${i}.abre_no_mes`, u.abre_no_mes ?? 1, "s", "number", "1")}</label>
+        <label class="f">ADR (BRL)${rowInput(`unidades.${i}.adr_brl`, u.adr_brl)}</label>
+      </div>
+      <div class="flatbox">
+        <label class="f">Ocupação<input class="s" type="number" step="1" min="0" max="100" data-flat="${i}" placeholder="${fl === null ? "misto" : "%"}" value="${fl === null ? "" : fl}"></label>
+        <div class="fh">Aplica o mesmo % aos 12 meses. Ajuste a sazonalidade abaixo só se precisar.</div>
+      </div>
+      <details class="mdet"${fl === null ? " open" : ""}>
+        <summary>Sazonalidade mês a mês</summary>
+        <div class="mgrid">${MESES.map((m, j) => `<label>${m}${rowInput(`unidades.${i}.occupancy_mensal.${j}`, Math.round(num((u.occupancy_mensal || [])[j]) * 1000) / 10, "s pct", "number", "1", ' min="0" max="100"')}</label>`).join("")}</div>
+      </details>
+    </div>`;
+  }).join("");
+  $("#tblSupr").innerHTML = `<tr><th>Item</th><th>Custo unitário (BRL)</th><th>Por</th><th>Custo mês (ano 1 médio)</th><th></th></tr>` +
+    s.suprimentos.map((it, i) => `<tr><td>${rowInput(`suprimentos.${i}.nome`, it.nome, "w", "text")}</td><td>${rowInput(`suprimentos.${i}.custo_unitario`, it.custo_unitario)}</td><td>${rowSelect(`suprimentos.${i}.por`, it.por, POR)}</td><td class="suprMes" data-i="${i}"></td><td><button data-del="suprimentos.${i}" aria-label="Remover item">×</button></td></tr>`).join("");
+  ensureRollout();
+  $("#tblRollout").innerHTML = `<tr><th>Ano</th><th>Occupancy ×</th><th>CAPEX extra (BRL)</th></tr>` +
+    s.rollout.map((r, i) => `<tr><td>${r.ano}</td><td>${rowInput(`rollout.${i}.occupancy_mult`, r.occupancy_mult, "s", "number", "0.05")}</td><td>${rowInput(`rollout.${i}.capex_extra_brl`, r.capex_extra_brl)}</td></tr>`).join("");
+  $("#cardObra").classList.toggle("hide", !(s.projeto.tipo === "terreno_casas" || s.projeto.tipo === "terreno"));
+  document.querySelectorAll("[data-p]").forEach(el => { const on = () => {
+    let v = el.type === "number" ? (el.value === "" ? 0 : +el.value) : el.value;
+    if (el.classList.contains("pct")) v = v / 100;
+    set(state, el.dataset.p, v);
+    const m = el.dataset.p.match(/^unidades\.(\d+)\.occupancy_mensal\./);
+    if (m) { const fl = flatOf(state.unidades[+m[1]]); const f = document.querySelector(`[data-flat="${m[1]}"]`); if (f) { f.value = fl === null ? "" : fl; f.placeholder = fl === null ? "misto" : "%"; } }
+    renderOut();
+  }; el.addEventListener("input", on); el.addEventListener("change", on); });
+  document.querySelectorAll("[data-flat]").forEach(el => { const on = () => {
+    const i = +el.dataset.flat, v = el.value === "" ? null : +el.value / 100; if (v === null) return;
+    state.unidades[i].occupancy_mensal = flat(clamp(v, 0, 1));
+    el.closest(".unit").querySelectorAll("input.pct").forEach(inp => inp.value = Math.round(clamp(v, 0, 1) * 1000) / 10);
+    el.placeholder = "%";
+    renderOut();
+  }; el.addEventListener("input", on); el.addEventListener("change", on); });
+  document.querySelectorAll("[data-del]").forEach(el => el.addEventListener("click", () => {
+    const [arr, i] = el.dataset.del.split("."); state[arr].splice(+i, 1); renderTables(); renderOut();
+  }));
+}
+
+// ---- veredito
+function veredito(s, r, eq) {
+  const k = r.kpis, H = r.H, a1 = r.anos[0];
+  if (s.projeto.tipo === "terreno") return ["", `Tipo <b>terreno</b>: nenhuma receita até construir. O caixa só desce — ${brl(-a1.resultado)} por ano de IPTU e custos fixos sobre um CAPEX de ${brl(k.capex_total)}. Mude para <b>terreno_casas</b> para simular a operação.`];
+  if (k.capex_total <= 0) return ["", `Sem CAPEX cadastrado: o resultado do ano 1 é ${brl(k.resultado_ano1)}, mas não há investimento para comparar. Preencha a aba CAPEX.`];
+  const yo = anoOperacao(s), ao = r.anos[yo - 1], res = ao.resultado, roi = res / k.capex_total;
+  const desde = yo > 1 ? ` (a partir do ano ${yo}, depois da obra)` : "";
+  if (k.payback_meses !== null) return ["ok", `Com estas premissas o projeto <b>se paga em ${k.payback_meses} meses</b> (≈ ${fmt1(k.payback_meses / 12)} anos): sobra ${brl(res)} por ano${desde} sobre um CAPEX de ${brl(k.capex_total)} — <b>${pct(roi)} ao ano</b>. Equilíbrio em ${eq === null ? "—" : pct(eq)} de ocupação.`];
+  if (res > 0) return ["", `Com estas premissas o projeto <b>não se paga em ${H} anos</b>: sobra ${brl(res)} por ano${desde} sobre um CAPEX de ${brl(k.capex_total)} — <b>${pct(roi)} ao ano</b>, ou ${fmt(k.capex_total / res)} anos de retorno no ritmo atual.`];
+  return ["", `Com estas premissas o projeto <b>perde ${brl(-res)} por ano</b>${desde} e não se paga em horizonte nenhum. Equilíbrio exigiria ${eq === null ? "mais de 100%" : pct(eq)} de ocupação — mexa em diária, ocupação ou custos.`];
+}
+
+// ---- gráfico
+function chart(s, r) {
+  const NM = r.H * 12, c0 = num(s.operacao.saldo_inicial_brl) - r.capex_mes0, k = r.kpis;
+  const pts = [c0, ...r.meses.map(x => x.caixa)];
+  const vmin = Math.min(0, ...pts), vmax = Math.max(0, ...pts);
+  let VMIN = Math.floor(vmin / 1e5) * 1e5, VMAX = Math.ceil(vmax / 1e5) * 1e5; if (VMAX === VMIN) VMAX = VMIN + 1e5;
+  const X = m => 64 + m / NM * 916, Y = v => 22 + (VMAX - v) / (VMAX - VMIN) * 230;
+  const y0 = Y(0);
+  const lbl = v => Math.abs(v) >= 1e6 ? fmt1(v / 1e6) + " mi" : fmt(v / 1e3) + " mil";
+  let step = 2e5; while ((VMAX - VMIN) / step > 8) step *= 2;
+  let out = `<text x="0" y="12" font-size="11" fill="var(--mut)">Caixa acumulado (R$)</text>`;
+  const grid = [0]; for (let v = -step; v >= VMIN; v -= step) grid.push(v); for (let v = step; v <= VMAX; v += step) grid.push(v);
+  for (const v of grid) {
+    const y = Y(v);
+    out += v === 0 ? `<line x1="64" x2="980" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line-3)" stroke-dasharray="2 5"/>` : `<line x1="64" x2="980" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line)"/>`;
+    out += `<text x="56" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--mut)">${v === 0 ? "0" : lbl(v)}</text>`;
+  }
+  for (let y = 1; y <= r.H; y++) {
+    if (y < r.H) out += `<line x1="${X(y * 12).toFixed(1)}" x2="${X(y * 12).toFixed(1)}" y1="22" y2="252" stroke="var(--line)"/>`;
+    out += `<text x="${X(y * 12 - 6).toFixed(1)}" y="268" text-anchor="middle" font-size="11" fill="var(--mut)">Ano ${y}</text>`;
+  }
+  const poly = pts.map((v, i) => `${X(i).toFixed(1)},${Math.max(Y(v), y0).toFixed(1)}`).join(" ");
+  out += `<polygon points="${X(0).toFixed(1)},${y0.toFixed(1)} ${poly} ${X(NM).toFixed(1)},${y0.toFixed(1)}" fill="var(--bad-2)"/>`;
+  out += `<polyline points="${pts.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>`;
+  const buraco = Math.min(...pts), mBuraco = pts.indexOf(buraco);
+  // rótulos abaixo da linha do zero, salvo quando o buraco é raso (a curva passaria por cima) ou não há espaço embaixo
+  const depthPx = Y(buraco) - y0;
+  const below = (y0 + 22 <= 244 && (depthPx > 40 || depthPx < 6)) || y0 - 12 < 30;
+  let ly = below ? y0 + 22 : y0 - 12; const dy = below ? 16 : -16;
+  const label = (x, text, color, anchor = "start") => { const t = `<text x="${x.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-size="12" font-weight="600" fill="${color}">${esc(text)}</text>`; ly += dy; return t; };
+  if (k.primeiro_mes_negativo !== null) {
+    const m = k.primeiro_mes_negativo, x = X(m), y = Y(pts[m]);
+    out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="var(--bad)"/><line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${y.toFixed(1)}" y2="252" stroke="var(--bad)" stroke-dasharray="3 3"/>`;
+    out += label(Math.min(x + 8, 700), `Mês ${m} · caixa fica negativo · buraco ${brl(buraco)}${mBuraco !== m ? ` no mês ${mBuraco}` : ""}`, "var(--bad)");
+  }
+  if (k.payback_meses !== null) {
+    const m = k.payback_meses, x = X(m), y = Y(pts[m]);
+    out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="var(--acc)"/><line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${y.toFixed(1)}" y2="252" stroke="var(--acc)" stroke-dasharray="3 3"/>`;
+    out += label(Math.min(x + 8, 760), `Payback · mês ${m}`, "var(--acc)");
+  } else if (k.capex_total > 0) out += label(72, `Payback não ocorre no horizonte de ${r.H} anos`, "var(--bad)");
+  out += `<line x1="980" x2="980" y1="22" y2="252" stroke="var(--line-3)"/>`;
+  const yl = Y(pts[NM]); out += `<text x="974" y="${(yl - 8 < 34 ? yl + 16 : yl - 8).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="var(--ink-2)">Fim do ano ${r.H} · ${brl(pts[NM])}</text>`;
+  const svg = $("#chart"); svg.innerHTML = out;
+  svg.setAttribute("aria-label", `Caixa acumulado ao longo de ${r.H} anos: mínimo ${brl(buraco)} no mês ${mBuraco}, fim ${brl(pts[NM])}${k.payback_meses === null ? ", sem cruzar a linha do zero" : `, payback no mês ${k.payback_meses}`}.`);
+  const mensal = r.anos[0].resultado / 12;
+  $("#fluxoNote").innerHTML = k.payback_meses !== null ? `O buraco máximo é <b>${brl(buraco)}</b> no mês ${mBuraco}; o caixa cruza o zero no <b>mês ${k.payback_meses}</b> e fecha o ano ${r.H} em ${brl(pts[NM])}.`
+    : mensal > 0 ? `O buraco máximo é <b>${brl(buraco)}</b> no mês ${mBuraco} e o caixa sobe ${brl(mensal)}/mês no ano 1. Para cruzar o zero nesse ritmo faltam <b>~${fmt(-buraco / mensal / 12)} anos</b> — ou uma premissa melhor: diária, ocupação ou comissão.`
+    : `O caixa não sobe: o resultado mensal do ano 1 é ${brl(mensal)}. O buraco máximo é <b>${brl(buraco)}</b>.`;
+}
+
+// ---- saídas
+function renderOut() {
+  save();
+  const s = state, H = hz(s);
+  $("#hNome").textContent = s.projeto.nome || "Airbnb Calc";
+  $("#hTipo").textContent = s.projeto.tipo;
+  $("#hCidade").textContent = [s.projeto.cidade, s.projeto.uf].filter(Boolean).join(" / ");
+  ["#hHoriz", "#vHoriz", "#fluxoHoriz"].forEach(id => $(id).textContent = H);
+  $("#fluxoCenario").textContent = cenario;
+  const erros = validate(s);
+  let r; try { r = calc(s, cenario); } catch (e) { erros.push("Erro de cálculo: " + e.message); }
+  $("#alerts").innerHTML = erros.map(e => `<div class="alert erro"><span>Erro</span><span>${esc(e)}</span></div>`).join("") + (r ? r.avisos.map(a => `<div class="alert aviso">⚠ ${esc(a)}</div>`).join("") : "");
+  if (!r) { $("#kpis").innerHTML = ""; $("#veredito").innerHTML = "<span>Corrija o erro acima para recalcular.</span>"; return; }
+  const k = r.kpis, eq = equilibrio(s), a1 = r.anos[0];
+  const [vcls, vtxt] = veredito(s, r, eq);
+  $("#veredito").className = "verdict-line " + vcls; $("#veredito").innerHTML = `<span>${vtxt}</span>`;
+  const kp = (cls, l, v, sub = "", neg = false) => `<div class="kpi ${cls}"><div class="l">${l}</div><div class="v${neg ? " neg" : ""}">${v}</div><div class="s">${sub}</div></div>`;
+  $("#kpis").innerHTML =
+    kp("ctx", "CAPEX total", brl(k.capex_total), "compra + cartório + obra + mobiliário + equip.") +
+    kp("ctx", "Receita bruta ano 1", brl(k.receita_ano1), `ADR médio ${brl(k.adr_medio_ano1)} · occ. ${pct(k.occupancy_ano1)} · RevPAR ${brl(k.revpar_ano1)}`) +
+    kp("ctx", "Taxas ano 1", brl(k.taxas_ano1), "plataforma + admin + impostos") +
+    kp("ctx", "OPEX ano 1", brl(k.opex_ano1), "fixos + caseiros + suprimentos") +
+    kp("hero", "Resultado ano 1", brl(k.resultado_ano1), `${pct(a1.roi)} do CAPEX · ${brl(k.resultado_ano1 / 12)} / mês`, k.resultado_ano1 < 0) +
+    kp("hero", "Payback", k.payback_meses === null ? (k.capex_total > 0 ? `não paga em ${H} anos` : "sem CAPEX") : `${k.payback_meses} meses`, k.payback_meses === null ? "resultado acumulado não cobre o CAPEX" : `≈ ${fmt1(k.payback_meses / 12)} anos`, k.payback_meses === null && k.capex_total > 0) +
+    kp("hero", "Occupancy de equilíbrio", eq === null ? "inviável" : pct(eq), eq === null ? `resultado do ano ${anoOperacao(s)} < 0 mesmo a 100%` : `menor ocupação flat com resultado do ano ${anoOperacao(s)} ≥ 0 (base)`, eq === null) +
+    kp("mini", "Reserva sugerida", brl(k.reserva_sugerida), `${num(s.risco.reserva_meses_opex)} meses de OPEX · saldo inicial ${brl(num(s.operacao.saldo_inicial_brl))}`) +
+    kp("mini", `Caixa fim ano ${H}`, brl(k.caixa_fim), k.primeiro_mes_negativo === null ? "caixa nunca negativo" : `primeiro mês negativo: ${k.primeiro_mes_negativo}`, k.caixa_fim < 0);
+
+  // CAPEX: barra, legenda, custo burocrático
+  const tot = capexTotal(s); $("#capexTot").textContent = brl(tot);
+  $("#capexTitle").textContent = `CAPEX — ${brl(tot)} até abrir a porta`;
+  const byCat = {}; for (const l of s.capex) byCat[l.categoria] = (byCat[l.categoria] || 0) + num(l.valor_brl);
+  const cats = Object.keys(CAT).filter(c => byCat[c] > 0);
+  $("#capexStack").innerHTML = cats.map(c => `<span style="width:${(100 * byCat[c] / tot).toFixed(2)}%;background:${CAT[c][1]}"></span>`).join("");
+  $("#capexStack").setAttribute("aria-label", "Composição do CAPEX: " + cats.map(c => `${CAT[c][0]} ${pct(byCat[c] / tot)}`).join(", ") + ".");
+  $("#capexLegend").innerHTML = cats.map(c => `<li><i style="background:${CAT[c][1]}"></i>${CAT[c][0]}<em>${pct(byCat[c] / tot)}</em><b>${brl(byCat[c])}</b></li>`).join("");
+  const base = s.capex.find(l => l.id === "compra" || l.id === "terreno") || s.capex.find(l => l.categoria === "aquisicao");
+  const buro = byCat.cartorio || 0, bv = base ? num(base.valor_brl) : 0;
+  $("#capexCallout").innerHTML = bv > 0 ? `<div><div class="eyebrow">Custo burocrático</div><div class="cv">${pct(buro / bv)}</div></div><div class="cl"><b>${brl(buro)}</b> em ITBI (${pct(num(s.aquisicao_pct.itbi_pct))}) e cartório (${pct(num(s.aquisicao_pct.cartorio_pct))}) sobre ${base.id === "terreno" ? "o preço do terreno" : "o preço de compra"} — dinheiro que sai do caixa e não vira imóvel nem receita. Típico no Brasil: 3,5% a 5%.</div>`
+    : `<div><div class="eyebrow">Custo burocrático</div><div class="cv">—</div></div><div class="cl">Sem linha de aquisição (“compra” ou “terreno”) para calcular ITBI e cartório.</div>`;
+
+  // suprimentos: custo por item, resumo, cascata
+  const m12 = r.meses.slice(0, 12);
+  const noitesMes = a1.noites / 12, coMes = a1.checkouts / 12, unMes = m12.reduce((a, x) => a + x.unidades_ativas, 0) / 12;
+  document.querySelectorAll(".suprMes").forEach(td => { const it = s.suprimentos[+td.dataset.i]; const c = Math.max(0, num(it.custo_unitario)); td.textContent = brl(it.por === "checkout" ? c * coMes : it.por === "noite_ocupada" ? c * noitesMes : c * unMes); });
+  const naAdmin = !!s.operacao.suprimentos_na_admin;
+  const suprNoite = a1.noites > 0 ? a1.suprimentos_bruto / a1.noites : 0;
+  const kpm = (l, v, sub) => `<div class="kpi mini"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
+  $("#suprResumo").innerHTML = `<div class="kpis">` +
+    kpm("Suprimentos ano 1", brl(a1.suprimentos_bruto), naAdmin ? "cobertos pela administradora — não abatidos" : `${fmt1(coMes)} checkouts/mês · ${fmt1(noitesMes)} noites/mês`) +
+    kpm("Por noite ocupada", brl(suprNoite), a1.adr_medio > 0 ? `${pct(suprNoite / a1.adr_medio)} da diária` : "sem noites ocupadas") +
+    kpm("Diárias líquidas após suprimentos (ano 1)", brl(a1.receita_diarias - a1.suprimentos), `${brl(a1.receita_diarias)} − ${brl(a1.suprimentos)}`) + `</div>`;
+  if (a1.noites > 0 && a1.adr_medio > 0) {
+    const n = a1.noites, adr = a1.adr_medio, li = a1.receita_limpeza / n, su = a1.suprimentos / n, ad = a1.admin / n, pl = a1.plataforma / n, im = a1.impostos / n, fx = (a1.opex_fixo + a1.caseiros) / n, sobra = a1.resultado / n;
+    const w = v => clamp(Math.abs(v) / adr * 100, 0, 100).toFixed(1);
+    const row = (cls, l, v, neg = false) => `<li class="${cls}"><span class="cl">${l}</span><span class="bar"><i style="width:${w(v)}%"></i></span><span class="cv">${neg ? "− " : ""}R$ ${fmt2(Math.abs(v))}</span></li>`;
+    let c = adr, h = row("final", "Diária cobrada (ADR médio)", adr);
+    if (li > 0) { c += li; h += row("step", "+ Taxa de limpeza que fica com o host", li).replace("R$", "+ R$"); }
+    h += row("cut", naAdmin ? "− Suprimentos (cobertos pela administradora)" : "− Suprimentos (limpeza, amenities, reposição)", su, true); c -= su;
+    h += row("step", "Líquida após suprimentos", c);
+    h += row("cut", `− Administradora (${pct(num(s.operacao.admin_pct))} da diária)`, ad, true); c -= ad;
+    h += row("cut", `− Plataforma (${pct(num(s.operacao.plataforma_pct))} da receita bruta)`, pl, true); c -= pl;
+    h += row("cut", `− Impostos (${pct(num(s.operacao.impostos_pct))}${num(s.operacao.impostos_pct) === 0 ? " — a confirmar" : ""})`, im, true); c -= im;
+    h += row("step final", "Líquida ao host, antes do OPEX fixo", c);
+    h += row("cut", `− OPEX fixo${a1.caseiros > 0 ? " + caseiros" : ""} rateado (${brl((a1.opex_fixo + a1.caseiros) / 12)} ÷ ${fmt1(n / 12)} noites)`, fx, true);
+    h += row("step final", "Sobra por noite ocupada", sobra);
+    $("#casc").innerHTML = h;
+    $("#cascNote").innerHTML = `Cada R$ 100 de diária deixa <b>R$ ${fmt(100 * sobra / adr)}</b> no bolso com as premissas atuais. Com ${fmt1(n / 12)} noites/mês: ${brl(a1.resultado / 12)}/mês, ${brl(a1.resultado)}/ano.`;
+  } else { $("#casc").innerHTML = ""; $("#cascNote").textContent = "Sem noites ocupadas no ano 1 — a cascata aparece quando houver receita de diárias."; }
+  const nCasMax = Math.max(0, ...m12.map(x => x.n_caseiros));
+  $("#caseiroResumo").textContent = s.caseiros.ativo ? `Ano 1: até ${nCasMax} caseiro(s) · custo fixo ${brl(m12.reduce((a, x) => a + x.caseiros_fixo, 0))} + bônus ${brl(m12.reduce((a, x) => a + x.caseiros_bonus, 0))} = ${brl(a1.caseiros)} · base do bônus: ${s.caseiros.bonus_base}` : "Caseiro desativado.";
+
+  // mês a mês (17 colunas — o filtro de colunas no CSS depende desta ordem)
+  const cols = [["Mês", x => x.m], ["Unid.", x => x.unidades_ativas], ["Noites", x => fmt1(x.noites)], ["Checkouts", x => fmt1(x.checkouts)], ["Receita diárias", x => fmt(x.receita_diarias)], ["Suprimentos", x => fmt(x.suprimentos)], ["Diárias líq. após supr.", x => fmt(x.diarias_apos_supr)], ["Tx. limpeza", x => fmt(x.receita_limpeza)], ["Plataforma", x => fmt(x.plataforma)], ["Admin", x => fmt(x.admin)], ["Impostos", x => fmt(x.impostos)], ["Caseiros", x => fmt(x.caseiros)], ["OPEX fixo", x => fmt(x.opex_fixo)], ["OPEX total", x => fmt(x.opex_total)], ["Resultado", x => fmt(x.resultado)], ["CAPEX", x => fmt(x.capex)], ["Caixa", x => fmt(x.caixa)]];
+  const c0 = num(s.operacao.saldo_inicial_brl) - r.capex_mes0;
+  $("#tblMeses").innerHTML = `<tr>${cols.map(c => `<th>${c[0]}</th>`).join("")}</tr>` +
+    `<tr${k.primeiro_mes_negativo === 0 ? ' class="mark"' : ""}><td>0</td>${cols.slice(1, -2).map(() => "<td>—</td>").join("")}<td>${fmt(r.capex_mes0)}</td><td class="${c0 < 0 ? "neg" : ""}">${fmt(c0)}</td></tr>` +
+    m12.map(x => `<tr${x.m === k.primeiro_mes_negativo ? ' class="mark"' : ""}>${cols.map((c, i) => `<td class="${(i === 14 && x.resultado < 0) || (i === 16 && x.caixa < 0) ? "neg" : ""}">${c[1](x)}</td>`).join("")}</tr>`).join("") +
+    `<tr class="tot"><td>Ano 1</td><td>—</td><td>${fmt1(a1.noites)}</td><td>${fmt1(a1.checkouts)}</td><td>${fmt(a1.receita_diarias)}</td><td>${fmt(a1.suprimentos)}</td><td>${fmt(a1.receita_diarias - a1.suprimentos)}</td><td>${fmt(a1.receita_limpeza)}</td><td>${fmt(a1.plataforma)}</td><td>${fmt(a1.admin)}</td><td>${fmt(a1.impostos)}</td><td>${fmt(a1.caseiros)}</td><td>${fmt(a1.opex_fixo)}</td><td>${fmt(a1.opex_total)}</td><td class="${a1.resultado < 0 ? "neg" : ""}">${fmt(a1.resultado)}</td><td>${fmt(a1.capex)}</td><td class="${a1.caixa_fim < 0 ? "neg" : ""}">${fmt(a1.caixa_fim)}</td></tr>`;
+  const ac = [["Ano", a => a.ano], ["Occ. ×", a => fmt1(a.occupancy_mult)], ["Noites", a => fmt1(a.noites)], ["Receita bruta", a => fmt(a.receita_bruta)], ["Suprimentos", a => fmt(a.suprimentos)], ["Plataforma", a => fmt(a.plataforma)], ["Admin", a => fmt(a.admin)], ["Impostos", a => fmt(a.impostos)], ["Caseiros", a => fmt(a.caseiros)], ["OPEX fixo", a => fmt(a.opex_fixo)], ["OPEX total", a => fmt(a.opex_total)], ["Resultado", a => fmt(a.resultado)], ["ROI", a => pct(a.roi)], ["CAPEX", a => fmt(a.capex)], ["Caixa fim", a => fmt(a.caixa_fim)]];
+  $("#tblAnos").innerHTML = `<tr>${ac.map(c => `<th>${c[0]}</th>`).join("")}</tr>` + r.anos.map(a => `<tr>${ac.map((c, i) => `<td class="${(i === 11 && a.resultado < 0) || (i === 14 && a.caixa_fim < 0) ? "neg" : ""}">${c[1](a)}</td>`).join("")}</tr>`).join("");
+  chart(s, r);
+
+  // premissas da impressão
+  const cx = id => { const l = s.capex.find(x => x.id === id); return l ? num(l.valor_brl) : 0; };
+  const occ = k.occupancy_ano1, fl = s.unidades.length ? flatOf(s.unidades[0]) : null;
+  const prem = [
+    [base ? (base.id === "terreno" ? "Preço do terreno" : "Preço de compra") : "Aquisição", brl(bv)],
+    ["ITBI + cartório", brl(buro)],
+    ["Obra + fit-out", brl((byCat.obra || 0) + (byCat.projeto || 0) + (byCat.contingencia || 0))],
+    ["Mobiliário + equip.", brl((byCat.mobiliario || 0) + (byCat.equipamentos || 0))],
+    ["Diária média (ADR)", brl(k.adr_medio_ano1)],
+    ["Ocupação", `${pct(occ)} (${cenario})${fl === null && s.unidades.length ? " · sazonal" : ""}`],
+    ["Administradora", s.operacao.modelo === "autogestao" ? "autogestão" : pct(num(s.operacao.admin_pct))],
+    ["Plataforma", pct(num(s.operacao.plataforma_pct))],
+    ["Impostos", pct(num(s.operacao.impostos_pct)) + (num(s.operacao.impostos_pct) === 0 ? " — a confirmar" : "")],
+    ["Suprimentos", `${brl(suprNoite)} / noite${naAdmin ? " (na admin)" : ""}`],
+    ["OPEX fixo", `${brl(a1.opex_fixo / 12)} / mês`],
+    ["Caseiro CLT", s.caseiros.ativo ? `${nCasMax} × ${brl(num(s.caseiros.salario_bruto_mes))} × ${fmt1(num(s.caseiros.encargos_mult))} + ${pct(num(s.caseiros.bonus_pct))}` : "desativado"],
+    ["Unidades", `${s.projeto.tipo === "terreno" ? 0 : s.unidades.length}`],
+    ["Saldo inicial", brl(num(s.operacao.saldo_inicial_brl))]
+  ];
+  $("#pPrem").innerHTML = prem.map(([l, v]) => `<div>${esc(l)} <span>${esc(v)}</span></div>`).join("");
+  $("#jsonArea").value = JSON.stringify(s, null, 2);
+}
+
+function importJson(text) {
+  let j; try { j = JSON.parse(text); } catch (e) { return "JSON inválido (arquivo cortado ou mal formado): " + e.message; }
+  const e = validate(j); if (e.length) return "Recusado: " + e.join(" ");
+  state = merge(defaults(), j); ensureRollout(); syncInputs(); renderTables(); renderOut(); return "Importado.";
+}
+
+// ---- wiring
+state = load(); ensureRollout();
+syncInputs(); bindInputs(); renderTables(); renderOut();
+$("#tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; showTab(b.dataset.t); });
+function showTab(t) { document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x.dataset.t === t)); document.querySelectorAll("section.tab").forEach(x => x.classList.toggle("on", x.id === "tab-" + t)); }
+document.querySelector(".brand").addEventListener("click", e => { e.preventDefault(); showTab("projeto"); window.scrollTo({ top: 0 }); });
+$("#segCenario").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; cenario = b.dataset.c; document.querySelectorAll("#segCenario button").forEach(x => x.classList.toggle("on", x === b)); renderOut(); });
+$("#btnExport").addEventListener("click", () => { const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${(state.projeto.nome || "airbnb-calc").replace(/[^\w-]+/g, "_")}.airbnb-calc.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
+$("#btnImport").addEventListener("click", () => $("#fileImport").click());
+$("#fileImport").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { const msg = importJson(rd.result); $("#jsonMsg").textContent = msg; if (msg !== "Importado.") alert(msg); }; rd.readAsText(f); e.target.value = ""; });
+$("#btnLoadText").addEventListener("click", () => { $("#jsonMsg").textContent = importJson($("#jsonArea").value); });
+$("#btnRefreshText").addEventListener("click", () => { $("#jsonArea").value = JSON.stringify(state, null, 2); $("#jsonMsg").textContent = "Atualizado."; });
+$("#btnReset").addEventListener("click", () => { if (!confirm("Voltar aos defaults? Isso apaga o estado atual.")) return; state = defaults(); syncInputs(); renderTables(); renderOut(); });
+$("#btnPrint").addEventListener("click", () => window.print());
+$("#btnAddCapex").addEventListener("click", () => { state.capex.push({ id: "novo" + (state.capex.length + 1), categoria: "outros", descricao: "", valor_brl: 0, mes_inicio: 0, meses: 1 }); renderTables(); renderOut(); });
+$("#btnAddUnidade").addEventListener("click", () => { const n = state.unidades.length + 1; const p = state.unidades[0]; state.unidades.push({ id: "u" + n, nome: "Unidade " + n, tipologia: p ? p.tipologia : "apto", m2: p ? p.m2 : 45, abre_no_mes: 1, adr_brl: p ? p.adr_brl : 350, occupancy_mensal: p ? clone(p.occupancy_mensal) : flat(0.6) }); renderTables(); renderOut(); });
+$("#btnAddSupr").addEventListener("click", () => { state.suprimentos.push({ id: "item" + (state.suprimentos.length + 1), nome: "", custo_unitario: 0, por: "checkout" }); renderTables(); renderOut(); });
+$("#btnAplicarPct").addEventListener("click", () => { aplicarPct(state); renderTables(); renderOut(); });
+$("#btnGerarObra").addEventListener("click", () => { gerarObra(state); syncInputs(); renderTables(); renderOut(); });
+</script>
+</body>
+</html>

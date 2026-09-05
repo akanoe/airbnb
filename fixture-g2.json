@@ -1,0 +1,36 @@
+{
+  "schema": "airbnb-calc.v1",
+  "projeto": { "nome": "Fixture G2", "cidade": "São Paulo", "uf": "SP", "tipo": "apartamento", "objetivo": "yield", "moeda": "BRL", "horizonte_anos": 5 },
+  "unidades": [
+    { "id": "u1", "nome": "Apto G2", "tipologia": "apto", "m2": 45, "abre_no_mes": 1, "adr_brl": 350,
+      "occupancy_mensal": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6] }
+  ],
+  "capex": [
+    { "id": "compra", "categoria": "aquisicao", "descricao": "Preço de compra", "valor_brl": 500000, "mes_inicio": 0, "meses": 1 },
+    { "id": "itbi", "categoria": "cartorio", "descricao": "ITBI 3%", "valor_brl": 15000, "mes_inicio": 0, "meses": 1 },
+    { "id": "cartorio", "categoria": "cartorio", "descricao": "Escritura + registro 1,5%", "valor_brl": 7500, "mes_inicio": 0, "meses": 1 },
+    { "id": "obra", "categoria": "obra", "descricao": "Reforma", "valor_brl": 40000, "mes_inicio": 0, "meses": 1 },
+    { "id": "decor", "categoria": "mobiliario", "descricao": "Decoração", "valor_brl": 25000, "mes_inicio": 0, "meses": 1 },
+    { "id": "equip", "categoria": "equipamentos", "descricao": "Equipamentos", "valor_brl": 15000, "mes_inicio": 0, "meses": 1 }
+  ],
+  "aquisicao_pct": { "itbi_pct": 0.03, "cartorio_pct": 0.015 },
+  "operacao": {
+    "modelo": "administradora", "admin_pct": 0.20, "plataforma_pct": 0.03, "impostos_pct": 0,
+    "condominio_mes_brl": 800, "iptu_ano_brl": 2400, "utilidades_mes_brl": 400, "seguro_mes_brl": 100, "outros_mes_brl": 0,
+    "suprimentos_na_admin": false, "noites_mes": 30, "estada_media": 3, "taxa_limpeza_hospede_brl": 0, "limpeza_fica_com_host": true, "saldo_inicial_brl": 0
+  },
+  "caseiros": { "ativo": false, "salario_bruto_mes": 2500, "encargos_mult": 1.8, "casas_por_caseiro": 5, "bonus_pct": 0.05, "bonus_base": "liquida_pos_admin" },
+  "suprimentos": [
+    { "id": "limpeza", "nome": "Limpeza checkout", "custo_unitario": 150, "por": "checkout" },
+    { "id": "amenities", "nome": "Kit amenities", "custo_unitario": 25, "por": "checkout" },
+    { "id": "reposicao", "nome": "Reposição residual", "custo_unitario": 100, "por": "mes" }
+  ],
+  "rollout": [
+    { "ano": 1, "occupancy_mult": 1.0, "capex_extra_brl": 0 },
+    { "ano": 2, "occupancy_mult": 1.0, "capex_extra_brl": 0 },
+    { "ano": 3, "occupancy_mult": 1.0, "capex_extra_brl": 0 },
+    { "ano": 4, "occupancy_mult": 1.0, "capex_extra_brl": 0 },
+    { "ano": 5, "occupancy_mult": 1.0, "capex_extra_brl": 0 }
+  ],
+  "risco": { "occupancy_cenarios": { "conservador": 0.7, "base": 1.0, "otimista": 1.15 }, "reserva_meses_opex": 3, "nota": "" }
+}
