@@ -465,7 +465,7 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
   .card h2{font-size:12px;margin:0 0 4px;border-bottom:1px solid #ccc;padding-bottom:2px}
   section.tab{display:none!important;margin:0}
   section.tab::before{display:none}
-  #tab-fluxo{display:block!important}
+  #tab-veredito,#tab-fluxo{display:block!important}
   #tab-fluxo .card:first-child .tw{display:none}
   .chartwrap{padding:0;background:none}
   .p-only{display:block!important}
@@ -495,6 +495,7 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
     <button data-t="simulador">Simulador</button>
     <button data-t="formulas">Fórmulas</button>
     <button data-t="json">JSON</button>
+    <button data-t="veredito">Veredito</button>
   </nav>
   <button class="themebtn" id="btnTheme" type="button" aria-pressed="false" title="Alternar claro / escuro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M19.8 4.2l-2.1 2.1M6.3 17.7l-2.1 2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg><span id="themeLabel">Escuro</span></button>
 </div>
@@ -513,6 +514,8 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
 
   <div class="alerts" id="alerts"></div>
 
+  <!-- VEREDITO (aba final) -->
+  <section class="tab" id="tab-veredito">
   <div class="verdict">
     <div class="verdict-top">
       <span class="eyebrow">Veredito · horizonte de <span id="vHoriz">5</span> anos</span>
@@ -536,6 +539,7 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
     </div>
   </div>
   <div class="card hide" id="plano"></div>
+  </section>
 
   <div class="p-only p-prem" id="pPrem"></div>
 
@@ -562,7 +566,7 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
         <label class="f">Moeda<input value="BRL" disabled></label>
         <label class="f">Saldo inicial de caixa (BRL)<input type="number" step="1000" data-k="operacao.saldo_inicial_brl" data-t="num"></label>
       </div>
-      <p class="note">Tipo <b>terreno</b>: nenhuma unidade opera (receita 0); só IPTU e outros custos correm. Tipo <b>terreno_casas</b>: use o assistente abaixo para gerar CAPEX e unidades; as casas abrem no mês seguinte ao fim da obra.</p>
+      <p class="note">O resultado — veredito, KPIs, cenários e plano para lucratividade — fica na aba <b>Veredito</b>, a última do menu. Tipo <b>terreno</b>: nenhuma unidade opera (receita 0); só IPTU e outros custos correm. Tipo <b>terreno_casas</b>: use o assistente abaixo para gerar CAPEX e unidades; as casas abrem no mês seguinte ao fim da obra.</p>
     </div>
 
     <div class="card" id="cardObra">
