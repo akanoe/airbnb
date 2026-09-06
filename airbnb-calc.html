@@ -398,6 +398,13 @@ svg.chart{display:block;width:100%;height:auto}
 .cen-hint{margin:var(--s3) 0 0;font-size:var(--t-s);color:var(--ink-2);max-width:84ch;text-wrap:pretty;line-height:1.5}
 .cen-hint b{background:var(--warn-2);color:var(--color-obsidian);padding:0 5px;border-radius:4px;font-weight:500}
 
+/* ---------- comparativo renda fixa ---------- */
+.cmp-key{display:flex;flex-wrap:wrap;gap:var(--s3) var(--s5);margin:var(--s4) 0 0;font-size:var(--t-xs);color:var(--mut)}
+.cmp-key span{display:flex;gap:8px;align-items:center}
+.cmp-key i{width:16px;height:2.5px;display:block;background:var(--ink)}
+.cmp-key i.f{background:var(--acc)}
+.cmp-key i.v{height:0;border-top:2px dashed var(--mut)}
+
 /* ---------- simulador ---------- */
 .range{width:100%;margin:var(--s4) 0 var(--s2);accent-color:var(--acc)}
 .range-scale{display:flex;justify-content:space-between;font-size:var(--t-xs);color:var(--mut);margin-bottom:var(--s4)}
@@ -539,6 +546,20 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
     </div>
   </div>
   <div class="card hide" id="plano"></div>
+  <div class="card" id="cardCmp">
+    <h2>E se o dinheiro ficasse no banco?</h2>
+    <p class="note" style="margin-top:0">Compara o ganho acumulado do projeto (soma dos resultados mensais) com o mesmo dinheiro — os mesmos desembolsos de CAPEX, nas mesmas datas — rendendo a uma taxa anual. Não conta a venda do imóvel; se quiser, informe uma valorização anual e ela entra na linha do projeto.</p>
+    <div class="grid">
+      <label class="f">Nome da aplicação<input data-k="comparativo.nome" data-t="str"></label>
+      <label class="f">Taxa (% ao ano)<input type="number" step="0.25" min="0" data-k="comparativo.taxa_anual" data-t="pct"></label>
+      <label class="f">Valorização do imóvel (% ao ano, opcional)<input type="number" step="0.5" min="0" data-k="comparativo.valorizacao_anual" data-t="pct"></label>
+    </div>
+    <p class="def">Taxa default <b>11% a.a.</b> como proxy do CDI — <b>estimativa, confira a taxa atual</b>. Juros compostos mês a mês, sem imposto de renda sobre o rendimento. Valorização default <b>0%</b>.</p>
+    <div class="kpis" id="cmpKpis"></div>
+    <div class="chartwrap" style="margin-top:var(--s5)"><svg class="chart" id="chartCmp" viewBox="0 0 1000 300" role="img"></svg></div>
+    <div class="cmp-key"><span><i></i> ganho acumulado do projeto</span><span><i class="f"></i> mesmo dinheiro na aplicação</span><span id="cmpKeyVal" class="hide"><i class="v"></i> valorização do imóvel (parte do projeto)</span></div>
+    <p class="note" id="cmpNote"></p>
+  </div>
   </section>
 
   <div class="p-only p-prem" id="pPrem"></div>
@@ -850,7 +871,8 @@ function defaults() {
     rollout: [1, 2, 3, 4, 5].map(ano => ({ ano, occupancy_mult: 1.0, capex_extra_brl: 0 })),
     risco: { occupancy_cenarios: { conservador: 0.7, base: 1.0, otimista: 1.15 }, reserva_meses_opex: 3, nota: "" },
     plano: { roi_alvo: 0.08 },
-    simulador: { occ: 0.6, adr_brl: 350 }
+    simulador: { occ: 0.6, adr_brl: 350 },
+    comparativo: { nome: "CDI", taxa_anual: 0.11, valorizacao_anual: 0 }
   };
 }
 
@@ -1105,6 +1127,29 @@ function planoLucratividade(s, alvo) {
   out.estado = cur; out.roi_final = rf.roi; out.payback = rf.r.kpis.payback_meses;
   return out;
 }
+
+// ---- Comparativo: ganho acumulado do projeto (Σ resultado mensal [+ valorização do imóvel]) vs o mesmo dinheiro (mesmos desembolsos de CAPEX, nas mesmas datas) rendendo a uma taxa anual.
+function comparativo(s, r) {
+  const c = s.comparativo || {};
+  const taxa = Math.max(0, num(c.taxa_anual)), val = Math.max(0, num(c.valorizacao_anual));
+  const im = Math.pow(1 + taxa, 1 / 12) - 1, iv = Math.pow(1 + val, 1 / 12) - 1;
+  const NM = r.H * 12;
+  const proj = [0], fin = [0], valz = [0];
+  let saldo = r.capex_mes0, aportes = r.capex_mes0, acum = 0, imovel = r.kpis.capex_total, capexAcum = r.capex_mes0;
+  for (let m = 1; m <= NM; m++) {
+    const x = r.meses[m - 1];
+    saldo = saldo * (1 + im) + x.capex; aportes += x.capex;
+    acum += x.resultado;
+    capexAcum += x.capex;
+    fin.push(saldo - aportes);
+    valz.push(capexAcum * (Math.pow(1 + iv, m) - 1));
+    proj.push(acum + valz[m]);
+  }
+  const base = r.kpis.capex_total;
+  const ganho_proj = proj[NM], ganho_fin = fin[NM];
+  const taxa_equiv = base > 0 && ganho_proj > -base ? Math.pow(1 + ganho_proj / base, 1 / r.H) - 1 : null;
+  return { taxa, val, proj, fin, valz, ganho_proj, ganho_fin, ganho_operacao: acum, taxa_equiv, NM, nome: c.nome || "renda fixa" };
+}
 /*ENGINE-END*/
 
 // ---------------- UI ----------------
@@ -1311,7 +1356,9 @@ function renderOut() {
   if (!r) { $("#kpis").innerHTML = ""; $("#veredito").innerHTML = "<span>Corrija o erro acima para recalcular.</span>"; return; }
   const k = r.kpis, eq = equilibrio(s), a1 = r.anos[0];
   const [vcls, vtxt] = veredito(s, r, eq);
-  $("#veredito").className = "verdict-line " + vcls; $("#veredito").innerHTML = `<span>${vtxt}</span>`;
+  const cmpV = comparativo(s, r);
+  const cmpTxt = s.projeto.tipo === "terreno" || k.capex_total <= 0 ? "" : ` No banco (${esc(cmpV.nome)} a ${pct(cmpV.taxa)}) o mesmo dinheiro renderia <b>${brl(cmpV.ganho_fin)}</b> em ${H} anos, contra ${brl(cmpV.ganho_proj)} do projeto.`;
+  $("#veredito").className = "verdict-line " + vcls; $("#veredito").innerHTML = `<span>${vtxt}${cmpTxt}</span>`;
   const kp = (cls, l, v, sub = "", neg = false) => `<div class="kpi ${cls}"><div class="l">${l}</div><div class="v${neg ? " neg" : ""}">${v}</div><div class="s">${sub}</div></div>`;
   $("#kpis").innerHTML =
     kp("ctx", "CAPEX total", brl(k.capex_total), "compra + cartório + obra + mobiliário + equip.") +
@@ -1379,6 +1426,7 @@ function renderOut() {
   const ac = [["Ano", a => a.ano], ["Occ. ×", a => fmt1(a.occupancy_mult)], ["Noites", a => fmt1(a.noites)], ["Receita bruta", a => fmt(a.receita_bruta)], ["Suprimentos", a => fmt(a.suprimentos)], ["Plataforma", a => fmt(a.plataforma)], ["Admin", a => fmt(a.admin)], ["Impostos", a => fmt(a.impostos)], ["Caseiros", a => fmt(a.caseiros)], ["OPEX fixo", a => fmt(a.opex_fixo)], ["OPEX total", a => fmt(a.opex_total)], ["Resultado", a => fmt(a.resultado)], ["ROI", a => pct(a.roi)], ["CAPEX", a => fmt(a.capex)], ["Caixa fim", a => fmt(a.caixa_fim)]];
   $("#tblAnos").innerHTML = `<tr>${ac.map(c => `<th>${c[0]}</th>`).join("")}</tr>` + r.anos.map(a => `<tr>${ac.map((c, i) => `<td class="${(i === 11 && a.resultado < 0) || (i === 14 && a.caixa_fim < 0) ? "neg" : ""}">${c[1](a)}</td>`).join("")}</tr>`).join("");
   chart(s, r);
+  renderCmp(s, r);
 
   // cenário de ocupação: multiplicadores nos botões + explicação com ocupação efetiva
   const cenMults = s.risco.occupancy_cenarios || {};
@@ -1473,6 +1521,43 @@ function renderPlano() {
     state = p.estado; syncInputs(); renderTables(); renderOut();
     box.innerHTML = `<h2>Plano aplicado</h2><p class="lead">Os campos alterados estão marcados em amarelo nas abas CAPEX, Operação e Demanda. Use “Desfazer plano aplicado” no bloco de veredito para voltar.</p><div class="toolbar"><button id="btnFecharPlano">Fechar</button></div>`; fechar();
   };
+}
+
+// ---- comparativo com renda fixa
+function renderCmp(s, r) {
+  const c = comparativo(s, r), NM = c.NM, H = r.H, capex = r.kpis.capex_total;
+  const kp = (cls, l, v, sub = "", neg = false) => `<div class="kpi ${cls}"><div class="l">${l}</div><div class="v${neg ? " neg" : ""}">${v}</div><div class="s">${sub}</div></div>`;
+  const diff = c.ganho_proj - c.ganho_fin;
+  $("#cmpKpis").innerHTML =
+    kp("hero", `Projeto em ${H} anos`, brl(c.ganho_proj), c.val > 0 ? `operação ${brl(c.ganho_operacao)} + valorização ${brl(c.valz[NM])}` : `soma dos resultados mensais · ${c.taxa_equiv === null ? "—" : pct(c.taxa_equiv) + " a.a. equivalente"}`, c.ganho_proj < 0) +
+    kp("hero", `${esc(c.nome)} a ${pct(c.taxa)}`, brl(c.ganho_fin), `sobre ${brl(capex)} nas mesmas datas do CAPEX`) +
+    kp("hero", diff >= 0 ? "Projeto ganha por" : "Banco ganha por", brl(Math.abs(diff)), diff >= 0 ? "o projeto rende mais que a aplicação" : "a aplicação rende mais que o projeto", diff < 0);
+  // gráfico de linhas
+  const all = [...c.proj, ...c.fin, 0];
+  const vmin = Math.min(...all), vmax = Math.max(...all);
+  let step = 1e5; while ((vmax - vmin) / step > 8) step *= 2; while ((vmax - vmin) / step < 3 && step > 1e3) step /= 2;
+  let VMIN = Math.floor(vmin / step) * step, VMAX = Math.ceil(vmax / step) * step; if (VMAX === VMIN) VMAX = VMIN + step;
+  const X = m => 64 + m / NM * 916, Y = v => 22 + (VMAX - v) / (VMAX - VMIN) * 230;
+  const lbl = v => Math.abs(v) >= 1e6 ? fmt1(v / 1e6) + " mi" : fmt(v / 1e3) + " mil";
+  let out = `<text x="0" y="12" font-size="11" fill="var(--mut)">Ganho acumulado (R$)</text>`;
+  for (let v = VMIN; v <= VMAX + 1e-6; v += step) { const y = Y(v); out += `<line x1="64" x2="980" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${v === 0 ? "var(--line-3)" : "var(--line)"}"${v === 0 ? ' stroke-dasharray="2 5"' : ""}/><text x="56" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--mut)">${v === 0 ? "0" : lbl(v)}</text>`; }
+  for (let y = 1; y <= H; y++) { if (y < H) out += `<line x1="${X(y * 12).toFixed(1)}" x2="${X(y * 12).toFixed(1)}" y1="22" y2="252" stroke="var(--line)"/>`; out += `<text x="${X(y * 12 - 6).toFixed(1)}" y="268" text-anchor="middle" font-size="11" fill="var(--mut)">Ano ${y}</text>`; }
+  const line = (arr, color, dash = "") => `<polyline points="${arr.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`;
+  out += line(c.fin, "var(--acc)");
+  if (c.val > 0) out += line(c.valz, "var(--mut)", "6 5");
+  out += line(c.proj, "var(--ink)");
+  const yp = Y(c.proj[NM]), yf = Y(c.fin[NM]); const sep = Math.abs(yp - yf) < 16;
+  out += `<text x="974" y="${(yp + (sep && yp >= yf ? 14 : -6)).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="var(--ink)">Projeto ${brl(c.proj[NM])}</text>`;
+  out += `<text x="974" y="${(yf + (sep && yf > yp ? 14 : -6)).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="var(--acc)">${esc(c.nome)} ${brl(c.fin[NM])}</text>`;
+  const svg = $("#chartCmp"); svg.innerHTML = out;
+  svg.setAttribute("aria-label", `Ganho acumulado em ${H} anos: projeto ${brl(c.proj[NM])}, ${c.nome} a ${pct(c.taxa)} ${brl(c.fin[NM])}.`);
+  $("#cmpKeyVal").classList.toggle("hide", !(c.val > 0));
+  // mês em que uma linha cruza a outra
+  let cruza = null; for (let m = 1; m <= NM; m++) { if ((c.proj[m] - c.fin[m]) * (c.proj[m - 1] - c.fin[m - 1]) < 0) { cruza = m; break; } }
+  $("#cmpNote").innerHTML = (diff >= 0
+    ? `Em ${H} anos o projeto acumula <b>${brl(diff)}</b> a mais que ${esc(c.nome)} a ${pct(c.taxa)}${cruza ? `; passa a aplicação no mês ${cruza}` : ""}.`
+    : `Em ${H} anos ${esc(c.nome)} a ${pct(c.taxa)} acumula <b>${brl(-diff)}</b> a mais que o projeto${cruza ? `; o projeto perde a dianteira no mês ${cruza}` : ""}. Para empatar, o projeto precisaria render ${pct(c.taxa)} a.a. sobre o CAPEX${c.taxa_equiv !== null ? `; hoje rende ${pct(c.taxa_equiv)}` : ""}.`)
+    + ` O comparativo ignora imposto de renda sobre a aplicação e o valor de revenda do imóvel${c.val > 0 ? " além da valorização informada" : ""}; o cenário de ocupação ativo (${cenario}) vale para a linha do projeto.`;
 }
 function importJson(text) {
   let j; try { j = JSON.parse(text); } catch (e) { return "JSON inválido (arquivo cortado ou mal formado): " + e.message; }

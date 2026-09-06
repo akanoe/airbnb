@@ -5,8 +5,8 @@ import vm from "node:vm";
 const html = readFileSync(new URL("./airbnb-calc.html", import.meta.url), "utf8");
 const engine = html.split("/*ENGINE-START*/")[1].split("/*ENGINE-END*/")[0];
 const ctx = {}; vm.createContext(ctx);
-vm.runInContext(engine + "\nthis.calc=calc;this.validate=validate;this.defaults=defaults;this.merge=merge;this.equilibrio=equilibrio;this.gerarObra=gerarObra;this.aplicarPct=aplicarPct;this.capexTotal=capexTotal;this.planoLucratividade=planoLucratividade;this.roiDe=roiDe;", ctx);
-const { calc, validate, defaults, merge, equilibrio, gerarObra, aplicarPct, capexTotal, planoLucratividade, roiDe } = ctx;
+vm.runInContext(engine + "\nthis.calc=calc;this.validate=validate;this.defaults=defaults;this.merge=merge;this.equilibrio=equilibrio;this.gerarObra=gerarObra;this.aplicarPct=aplicarPct;this.capexTotal=capexTotal;this.planoLucratividade=planoLucratividade;this.roiDe=roiDe;this.comparativo=comparativo;", ctx);
+const { calc, validate, defaults, merge, equilibrio, gerarObra, aplicarPct, capexTotal, planoLucratividade, roiDe, comparativo } = ctx;
 const fixture = JSON.parse(readFileSync(new URL("./fixture-g2.json", import.meta.url), "utf8"));
 const clone = o => JSON.parse(JSON.stringify(o));
 const results = [];
@@ -189,6 +189,21 @@ const F = () => merge(defaults(), fixture);
   check("G7", "tipo terreno → motivo humano", !!planoLucratividade(t0, 0.08).motivo, planoLucratividade(t0, 0.08).motivo);
   const menor = planoLucratividade(F(), 0.06);
   check("G7", "meta menor (6%) exige mudança menor ou igual à de 8%", menor.passos.filter(x => x.alterado).length <= p8.passos.filter(x => x.alterado).length, `6%: ${menor.passos.filter(x => x.alterado).length} alavancas; 8%: ${p8.passos.filter(x => x.alterado).length}`);
+}
+
+// ---- G8 Comparativo renda fixa
+{
+  const s = F(); s.comparativo = { nome: "CDI", taxa_anual: 0.11, valorizacao_anual: 0 };
+  const r = calc(s, "base"); const c = comparativo(s, r);
+  const fin = 602500 * (Math.pow(1.11, 5) - 1), proj = 5 * 26412;
+  check("G8", "CDI 11% sobre 602500 em 5 anos = 602500×(1,11^5−1) e projeto = 5×26412", near(c.ganho_fin, fin, 2) && near(c.ganho_proj, proj, 1), `fin=${c.ganho_fin.toFixed(2)} esperado=${fin.toFixed(2)} proj=${c.ganho_proj} esperado=${proj}`);
+  check("G8", "taxa equivalente do projeto = (1+132060/602500)^(1/5)−1", near(c.taxa_equiv, Math.pow(1 + proj / 602500, 0.2) - 1, 1e-6), `taxa_equiv=${c.taxa_equiv}`);
+  const sv = clone(s); sv.comparativo.valorizacao_anual = 0.05;
+  const cv = comparativo(sv, calc(sv, "base"));
+  check("G8", "valorização 5% a.a. entra na linha do projeto: +602500×(1,05^5−1)", near(cv.ganho_proj, proj + 602500 * (Math.pow(1.05, 5) - 1), 2), `proj_com_val=${cv.ganho_proj.toFixed(2)}`);
+  const s0 = clone(s); s0.comparativo.taxa_anual = 0;
+  check("G8", "taxa 0 → ganho do banco 0, sem NaN", comparativo(s0, calc(s0)).ganho_fin === 0 && finiteDeep(comparativo(s0, calc(s0))) === null, "ok");
+  check("G8", "séries têm NM+1 pontos e começam em 0", c.proj.length === 61 && c.fin.length === 61 && c.proj[0] === 0 && c.fin[0] === 0, `len=${c.proj.length}`);
 }
 
 // ---- relatório
