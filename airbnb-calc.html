@@ -378,6 +378,31 @@ svg.chart{display:block;width:100%;height:auto}
 .chg,td input.chg,label.f input.chg,.mgrid input.chg{border-color:var(--acc)!important;box-shadow:0 0 0 3px var(--warn-2)}
 @media print{#plano,.plano-top{display:none!important}}
 
+/* ---------- menu lateral no desktop; barra superior rolável abaixo de 900px ---------- */
+:root{--side:224px}
+@media (min-width:901px){
+  body{padding-left:var(--side)}
+  .topbar{position:fixed;left:0;top:0;bottom:0;width:var(--side);flex-direction:column;min-height:0;z-index:5;overflow:hidden}
+  .brand{padding:18px 20px;border-bottom:var(--dot);border-color:rgba(255,255,255,.34)}
+  .topbar .tabs{flex:1 1 auto;flex-direction:column;overflow-x:hidden;overflow-y:auto;border-left:0;padding:8px 0;
+    mask-image:none;-webkit-mask-image:none}
+  .tabs button{border-right:0;text-align:left;padding:13px 20px;font-size:var(--t-m)}
+  .tabs button.on::after{left:0;top:0;bottom:0;right:auto;width:3px;height:auto}
+  .themebtn{border-left:0;border-top:var(--dot);border-color:rgba(255,255,255,.34);padding:16px 20px;justify-content:flex-start}
+}
+
+/* ---------- cenário de ocupação ---------- */
+.cen{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s3);align-items:center}
+.verdict-top .cen .eyebrow{margin-right:0}
+.seg button em{font-style:normal;opacity:.75;margin-left:5px;font-size:10px;letter-spacing:0}
+.cen-hint{margin:var(--s3) 0 0;font-size:var(--t-s);color:var(--ink-2);max-width:84ch;text-wrap:pretty;line-height:1.5}
+.cen-hint b{background:var(--warn-2);color:var(--color-obsidian);padding:0 5px;border-radius:4px;font-weight:500}
+
+/* ---------- simulador ---------- */
+.range{width:100%;margin:var(--s4) 0 var(--s2);accent-color:var(--acc)}
+.range-scale{display:flex;justify-content:space-between;font-size:var(--t-xs);color:var(--mut);margin-bottom:var(--s4)}
+#tblSens tr.mark td{background:var(--warn-2);color:var(--color-obsidian)}
+
 textarea{width:100%;min-height:260px;font:400 var(--t-s)/1.6 var(--f-mono);
   border:1.5px solid var(--line-2);border-radius:var(--r-medium);padding:var(--s4);
   background:transparent;color:var(--ink)}
@@ -395,6 +420,8 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
   .legend{grid-template-columns:1fr}
 }
 @media (max-width:520px){
+  .seg{flex-wrap:wrap}
+  .seg button{padding:7px 10px}
   .brand .wm{display:none}
   .brand{padding:0 14px}
   .topbar{min-height:52px}
@@ -423,7 +450,7 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
     --s5:10px;--s4:8px;--s3:6px;--s6:12px;--pad-card:0;--gutter:0;--r-card:0;
     --bg:#fff;--paper:#fff;--paper-2:#fff;--ink:#000;--ink-2:#222;--mut:#555;
     --line:rgba(0,0,0,.25);--dot:1px dotted rgba(0,0,0,.4)}
-  body{background:#fff;color:#000;font-size:9.2px}
+  body{background:#fff;color:#000;font-size:9.2px;padding-left:0}
   .topbar,.toolbar,.tabs,.themebtn,button,.colswitch,.tw-hint,.note,.def,.alert.aviso,
   details.mdet,.chart-key{display:none!important}
   header{padding:0 0 6px;border-bottom:1px solid #999;width:auto}
@@ -465,6 +492,7 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
     <button data-t="suprimentos">Suprimentos</button>
     <button data-t="risco">Risco &amp; rollout</button>
     <button data-t="fluxo">Fluxo de caixa</button>
+    <button data-t="simulador">Simulador</button>
     <button data-t="formulas">Fórmulas</button>
     <button data-t="json">JSON</button>
   </nav>
@@ -488,13 +516,16 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
   <div class="verdict">
     <div class="verdict-top">
       <span class="eyebrow">Veredito · horizonte de <span id="vHoriz">5</span> anos</span>
-      <span class="eyebrow" style="color:var(--ink-2)">Cenário de ocupação</span>
-      <div class="seg" id="segCenario">
-        <button data-c="conservador">Conservador</button>
-        <button data-c="base" class="on">Base</button>
-        <button data-c="otimista">Otimista</button>
+      <div class="cen">
+        <span class="eyebrow" style="color:var(--ink-2)">Cenário de ocupação</span>
+        <div class="seg" id="segCenario">
+          <button data-c="conservador">Conservador<em id="cmConservador">0,7×</em></button>
+          <button data-c="base" class="on">Base<em id="cmBase">1,0×</em></button>
+          <button data-c="otimista">Otimista<em id="cmOtimista">1,15×</em></button>
+        </div>
       </div>
     </div>
+    <p class="cen-hint" id="cenHint"></p>
     <p class="verdict-line" id="veredito"><span></span></p>
     <div class="kpis" id="kpis"></div>
     <div class="plano-top">
@@ -700,6 +731,32 @@ pre.formulas{font:400 var(--t-s)/1.7 var(--f-mono);white-space:pre-wrap;margin:0
     </div>
   </section>
 
+  <!-- SIMULADOR -->
+  <section class="tab" id="tab-simulador">
+    <div class="card">
+      <h2>Simulador de cenários — e se a ocupação fosse outra?</h2>
+      <p class="note" style="margin-top:0">Teste uma ocupação e uma diária <b>sem mexer nas premissas</b>. CAPEX, custos, unidades, horizonte e rollout são os atuais; só ocupação e diária mudam, iguais para todas as unidades nos 12 meses. Os multiplicadores conservador/otimista não entram aqui — o que você digita é a ocupação efetiva.</p>
+      <div class="grid">
+        <label class="f">Ocupação simulada (%)<input type="number" min="0" max="100" step="1" data-k="simulador.occ" data-t="pct"></label>
+        <label class="f">Diária simulada (BRL)<input type="number" min="0" step="5" data-k="simulador.adr_brl" data-t="num"></label>
+        <label class="f">&nbsp;<button id="btnSimAtual">Usar ocupação e diária atuais</button></label>
+      </div>
+      <input type="range" id="simRange" min="0" max="100" step="1" class="range" aria-label="Ocupação simulada">
+      <div class="range-scale"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+      <div class="kpis" id="simKpis"></div>
+      <p class="note" id="simNote"></p>
+    </div>
+    <div class="card">
+      <h2>P&amp;L anual no cenário simulado</h2>
+      <div class="tw"><table id="tblSimAnos"></table></div>
+    </div>
+    <div class="card">
+      <h2>Sensibilidade à ocupação</h2>
+      <p class="note" style="margin-top:0">Com a diária simulada, de 20% a 100% de ocupação. Linha marcada = ocupação simulada. Resultado e ROI do primeiro ano com operação.</p>
+      <div class="tw"><table id="tblSens"></table></div>
+    </div>
+  </section>
+
   <!-- FÓRMULAS -->
   <section class="tab" id="tab-formulas">
     <div class="card">
@@ -788,7 +845,8 @@ function defaults() {
     ],
     rollout: [1, 2, 3, 4, 5].map(ano => ({ ano, occupancy_mult: 1.0, capex_extra_brl: 0 })),
     risco: { occupancy_cenarios: { conservador: 0.7, base: 1.0, otimista: 1.15 }, reserva_meses_opex: 3, nota: "" },
-    plano: { roi_alvo: 0.08 }
+    plano: { roi_alvo: 0.08 },
+    simulador: { occ: 0.6, adr_brl: 350 }
   };
 }
 
@@ -1050,6 +1108,7 @@ const LS = "airbnb-calc.v1", LS_THEME = "airbnb-calc.theme";
 const $ = s => document.querySelector(s);
 const fmt = v => (Number.isFinite(v) ? Math.round(v).toLocaleString("pt-BR") : "—");
 const fmt1 = v => (Number.isFinite(v) ? v.toLocaleString("pt-BR", { maximumFractionDigits: 1, minimumFractionDigits: 0 }) : "—");
+const fmtX = v => (Number.isFinite(v) ? v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + "×" : "—");
 const fmt2 = v => (Number.isFinite(v) ? v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—");
 const pct = v => (Number.isFinite(v) ? (v * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "%" : "—");
 const brl = v => "R$ " + fmt(v);
@@ -1317,6 +1376,42 @@ function renderOut() {
   $("#tblAnos").innerHTML = `<tr>${ac.map(c => `<th>${c[0]}</th>`).join("")}</tr>` + r.anos.map(a => `<tr>${ac.map((c, i) => `<td class="${(i === 11 && a.resultado < 0) || (i === 14 && a.caixa_fim < 0) ? "neg" : ""}">${c[1](a)}</td>`).join("")}</tr>`).join("");
   chart(s, r);
 
+  // cenário de ocupação: multiplicadores nos botões + explicação com ocupação efetiva
+  const cenMults = s.risco.occupancy_cenarios || {};
+  const occInf = s.unidades.length ? s.unidades.reduce((a, u) => a + (u.occupancy_mensal || []).reduce((b, o) => b + num(o), 0) / 12, 0) / s.unidades.length : 0;
+  for (const c of ["conservador", "base", "otimista"]) { const el = $("#cm" + c.charAt(0).toUpperCase() + c.slice(1)); if (el) el.textContent = fmtX(num(cenMults[c])); }
+  const ef = c => clamp(occInf * num(cenMults[c]), 0, 1);
+  const nm = num(s.operacao.noites_mes) > 0 ? num(s.operacao.noites_mes) : 30;
+  $("#cenHint").innerHTML = s.projeto.tipo === "terreno" || !s.unidades.length ? "Sem unidades operando: o cenário não tem efeito." :
+    `O cenário <b>${cenario}</b> multiplica por <b>${fmtX(num(cenMults[cenario]))}</b> a ocupação que você informou em cada unidade (média ${pct(occInf)}), dando <b>${pct(ef(cenario))} de ocupação efetiva</b> ≈ ${fmt1(nm * ef(cenario))} noites/mês por unidade. ` +
+    `Conservador ${fmtX(num(cenMults.conservador))} → ${pct(ef("conservador"))} · Base ${fmtX(num(cenMults.base))} → ${pct(ef("base"))} · Otimista ${fmtX(num(cenMults.otimista))} → ${pct(ef("otimista"))}. ` +
+    `Trocar o cenário recalcula veredito, KPIs, fluxo de caixa e P&L. Os multiplicadores são editáveis na aba Risco &amp; rollout; a ocupação de equilíbrio e o plano usam sempre o base.`;
+
+  // simulador
+  {
+    const so = clamp(num(s.simulador.occ), 0, 1), sa = Math.max(0, num(s.simulador.adr_brl));
+    $("#simRange").value = Math.round(so * 100);
+    const simDe = occ => { const t = clone(s); t.risco.occupancy_cenarios.base = 1; t.unidades = t.unidades.map(u => ({ ...u, occupancy_mensal: flat(occ), adr_brl: sa })); return calc(t, "base"); };
+    const rs = simDe(so), yo = anoOperacao(s), ay = rs.anos[yo - 1], ks = rs.kpis;
+    const sub = yo > 1 ? `ano ${yo} (primeiro com operação)` : "ano 1";
+    $("#simKpis").innerHTML =
+      kp("hero", `Resultado ${sub}`, brl(ay.resultado), `${pct(ay.roi)} do CAPEX · ${brl(ay.resultado / 12)} / mês`, ay.resultado < 0) +
+      kp("hero", "Payback", ks.payback_meses === null ? (ks.capex_total > 0 ? `não paga em ${rs.H} anos` : "sem CAPEX") : `${ks.payback_meses} meses`, ks.payback_meses === null ? "resultado acumulado não cobre o CAPEX" : `≈ ${fmt1(ks.payback_meses / 12)} anos`, ks.payback_meses === null && ks.capex_total > 0) +
+      kp("hero", `Receita bruta ${sub}`, brl(ay.receita_bruta), `${fmt1(nm * so)} noites/mês por unidade · ${s.unidades.length} unidade(s) · diária ${brl(sa)}`) +
+      kp("ctx", "Suprimentos", brl(ay.suprimentos), "escalam com checkouts e noites") +
+      kp("ctx", "Taxas", brl(ay.plataforma + ay.admin + ay.impostos), "plataforma + admin + impostos") +
+      kp("ctx", "OPEX total", brl(ay.opex_total), "fixos + caseiros + suprimentos") +
+      kp("ctx", `Caixa fim ano ${rs.H}`, brl(ks.caixa_fim), ks.primeiro_mes_negativo === null ? "caixa nunca negativo" : `primeiro mês negativo: ${ks.primeiro_mes_negativo}`, ks.caixa_fim < 0);
+    const dR = ay.resultado - r.anos[yo - 1].resultado;
+    $("#simNote").innerHTML = s.projeto.tipo === "terreno" || !s.unidades.length ? "Sem unidades operando: cadastre unidades na aba Demanda." :
+      `Comparado com as premissas atuais (ocupação média ${pct(occInf)}, diária média ${brl(k.adr_medio_ano1 || 0)}, cenário ${cenario}), o resultado do ${sub} ${dR >= 0 ? "sobe" : "cai"} <b>${brl(Math.abs(dR))}</b>. Para levar isso às premissas, digite os valores na aba Demanda ou use o plano para lucratividade.`;
+    $("#tblSimAnos").innerHTML = `<tr>${ac.map(c => `<th>${c[0]}</th>`).join("")}</tr>` + rs.anos.map(a => `<tr>${ac.map((c, i) => `<td class="${(i === 11 && a.resultado < 0) || (i === 14 && a.caixa_fim < 0) ? "neg" : ""}">${c[1](a)}</td>`).join("")}</tr>`).join("");
+    const occs = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+    const perto = Math.round(so * 1000) / 1000; if (!occs.some(o => Math.abs(o - perto) < 1e-9)) { occs.push(perto); occs.sort((a, b) => a - b); }
+    $("#tblSens").innerHTML = `<tr><th>Ocupação</th><th>Noites/mês/unid.</th><th>Receita bruta</th><th>Suprimentos</th><th>Taxas</th><th>OPEX total</th><th>Resultado</th><th>ROI</th><th>Payback</th><th>Caixa fim ano ${rs.H}</th></tr>` +
+      occs.map(o => { const x = simDe(o), a = x.anos[yo - 1], kk = x.kpis; return `<tr class="${Math.abs(o - perto) < 1e-9 ? "mark" : ""}"><td>${pct(o)}${Math.abs(o - perto) < 1e-9 ? " ◂ simulada" : ""}</td><td>${fmt1(nm * o)}</td><td>${fmt(a.receita_bruta)}</td><td>${fmt(a.suprimentos)}</td><td>${fmt(a.plataforma + a.admin + a.impostos)}</td><td>${fmt(a.opex_total)}</td><td class="${a.resultado < 0 ? "neg" : ""}">${fmt(a.resultado)}</td><td class="${a.roi < 0 ? "neg" : ""}">${pct(a.roi)}</td><td>${kk.payback_meses === null ? "—" : kk.payback_meses + " m"}</td><td class="${kk.caixa_fim < 0 ? "neg" : ""}">${fmt(kk.caixa_fim)}</td></tr>`; }).join("");
+  }
+
   // premissas da impressão
   const cx = id => { const l = s.capex.find(x => x.id === id); return l ? num(l.valor_brl) : 0; };
   const occ = k.occupancy_ano1, fl = s.unidades.length ? flatOf(s.unidades[0]) : null;
@@ -1395,6 +1490,8 @@ $("#btnLoadText").addEventListener("click", () => { $("#jsonMsg").textContent = 
 $("#btnRefreshText").addEventListener("click", () => { $("#jsonArea").value = JSON.stringify(state, null, 2); $("#jsonMsg").textContent = "Atualizado."; });
 $("#btnReset").addEventListener("click", () => { if (!confirm("Voltar aos defaults? Isso apaga o estado atual.")) return; changedPaths = new Set(); planoBackup = null; $("#plano").classList.add("hide"); state = defaults(); syncInputs(); renderTables(); renderOut(); });
 $("#btnPrint").addEventListener("click", () => window.print());
+$("#simRange").addEventListener("input", () => { state.simulador.occ = +$("#simRange").value / 100; syncInputs(); renderOut(); });
+$("#btnSimAtual").addEventListener("click", () => { const u = state.unidades; if (!u.length) return; state.simulador.occ = Math.round(u.reduce((a, x) => a + (x.occupancy_mensal || []).reduce((b, o) => b + num(o), 0) / 12, 0) / u.length * 100) / 100; state.simulador.adr_brl = Math.round(u.reduce((a, x) => a + num(x.adr_brl), 0) / u.length); syncInputs(); renderOut(); });
 $("#btnPlano").addEventListener("click", () => { renderPlano(); $("#plano").scrollIntoView({ behavior: "smooth", block: "start" }); });
 $("#btnDesfazerPlano").addEventListener("click", () => { if (!planoBackup) return; state = planoBackup; planoBackup = null; changedPaths = new Set(); $("#plano").classList.add("hide"); syncInputs(); renderTables(); renderOut(); });
 $("#btnAddCapex").addEventListener("click", () => { state.capex.push({ id: "novo" + (state.capex.length + 1), categoria: "outros", descricao: "", valor_brl: 0, mes_inicio: 0, meses: 1 }); renderTables(); renderOut(); });
